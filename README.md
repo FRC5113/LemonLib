@@ -32,4 +32,4 @@ Custom library for 5113 Combutible Lemons
 Coming Soon (mabye)
 
 ### Offline installation
-Folder can be placed preferably in the `util` but can be placed any where.
+Folder can be placed preferably in the `Top` but can be placed any where.

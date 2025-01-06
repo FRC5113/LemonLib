@@ -6,6 +6,13 @@ from wpiutil import Sendable, SendableBuilder
 from ntcore import NetworkTableInstance, PubSubOptions
 import json
 
+from typing import Callable
+
+from wpilib import Timer
+from commands2.sysid import SysIdRoutine
+from wpilib.sysid import SysIdRoutineLog, State
+from magicbot import will_reset_to
+
 
 class AlertType(Enum):
     """
@@ -271,3 +278,187 @@ class Elastic:
             Elastic._publisher.set(json.dumps(alert.to_dict()))
         except Exception as e:
             print(f"Error serializing alert: {e}")
+
+
+
+
+def clamp(value: float, min_value: float, max_value: float) -> float:
+    """Restrict value between min_value and max_value."""
+    return max(min(value, max_value), min_value)
+
+
+def curve(
+    mapping: Callable[[float], float],
+    offset: float,
+    deadband: float,
+    max_mag: float,
+    absolute_offset: bool = True,
+) -> Callable[[float], float]:
+    """Return a function that applies a curve to an input.
+
+    Arguments:
+    mapping -- maps input to output
+    offset -- added to output, even if the input is deadbanded
+    deadband -- when the input magnitude is less than this,
+        the input is treated as zero
+    max_mag -- restricts the output magnitude to a maximum.
+        If this is 0, no restriction is applied.
+    absolute_offset -- If true, applies offset always (even when deadbanded),
+        If false, adds sign(input_val) * offset or 0 in the deadband
+    """
+
+    def f(input_val: float) -> float:
+        """Apply a curve to an input. Be sure to call this function to get an output, not curve."""
+        if abs(input_val) < deadband:
+            return offset if absolute_offset else 0
+        applied_offset = (1 if absolute_offset else abs(input_val) / input_val) * offset
+        output_val = mapping(input_val) + applied_offset
+        if max_mag == 0:
+            return output_val
+        else:
+            return clamp(output_val, -max_mag, max_mag)
+
+    return f
+
+
+def linear_curve(
+    scalar: float = 1.0,
+    offset: float = 0.0,
+    deadband: float = 0.0,
+    max_mag: float = 0.0,
+    absolute_offset: bool = True,
+) -> Callable[[float], float]:
+    return curve(lambda x: scalar * x, offset, deadband, max_mag, absolute_offset)
+
+
+def ollie_curve(
+    scalar: float = 1.0,
+    offset: float = 0.0,
+    deadband: float = 0.0,
+    max_mag: float = 0.0,
+    absolute_offset: bool = True,
+) -> Callable[[float], float]:
+    return curve(
+        lambda x: scalar * x * abs(x), offset, deadband, max_mag, absolute_offset
+    )
+
+
+def cubic_curve(
+    scalar: float = 1.0,
+    offset: float = 0.0,
+    deadband: float = 0.0,
+    max_mag: float = 0.0,
+    absolute_offset: bool = True,
+) -> Callable[[float], float]:
+    return curve(lambda x: scalar * x**3, offset, deadband, max_mag, absolute_offset)
+
+
+
+class MagicSysIdRoutine:
+    """Magicbot implementation of SysIdRoutine from commands2.
+    To use this in a magicbot project, three things must be done:
+    1. Within the component that is being sysid'ed, create two methods
+    for driving the mechanism and logging values. The drive method
+    should take one parameter: volts (float), and the log method should
+    take one parameter: log (SysIdRoutineLog). Example log method:
+    ```
+    def sysid_log(self, log: SysIdRoutineLog) -> None:
+        log.motor("drive").voltage(
+            self.drive_motor.getVoltage()
+        ).position(
+            self.drive_motor.getPosition()
+        ).velocity(
+            self.drive_motor.getVelocity()
+        )
+    ```
+    2. Create a new component that inherits from `MagicSysIdRoutine`.
+    This should be a high-level component that is injected lower-level
+    components that it controls. Use the `setup()` method (not
+    `__init__()`!) to call `setup_sysid()`.
+    ```
+    class SysIdDrive(MagicSysIdRoutine):
+        drive: Drive
+
+        def setup(self):
+            self.setup_sysid(
+                SysIdRoutine.Config(rampRate=0.2, stepVoltage=7.0),
+                SysIdRoutine.Mechanism(
+                    self.drive.sysid_drive, self.drive.sysid_log, self.drive, "Drive",
+                ),
+            )
+    ```
+    3. In robot.py, annotate the sysid component (above the low-level
+    components), and call the `quasistatic_forwards()`,
+    `quasistatic_reverse()`, `dynamic_forward()`, and `dynamic_reverse()`
+    methods (eg. bound to controller buttons)
+    ```
+    """
+
+    enabled = will_reset_to(False)
+    output_volts = will_reset_to(0)
+
+    def __init__(self):
+        self.timer = Timer()
+        self.timed_out = False
+        self.was_enabled = False
+        self.state = State.kNone
+
+    def setup_sysid(
+        self, config: SysIdRoutine.Config, mechanism: SysIdRoutine.Mechanism
+    ):
+        self.log = SysIdRoutineLog(mechanism.name)
+        self.config = config
+        self.mechanism = mechanism
+        self.record_state = config.recordState or self.log.recordState
+
+    def quasistatic_forward(self):
+        self.enabled = True
+        self.state = State.kQuasistaticForward
+        self.outputVolts = self.timer.get() * self.config.rampRate
+
+    def quasistatic_reverse(self):
+        self.enabled = True
+        self.state = State.kQuasistaticReverse
+        self.outputVolts = -self.timer.get() * self.config.rampRate
+
+    def dynamic_forward(self):
+        self.enabled = True
+        self.state = State.kDynamicForward
+        self.outputVolts = self.config.stepVoltage
+
+    def dynamic_reverse(self):
+        self.enabled = True
+        self.state = State.kDynamicReverse
+        self.outputVolts = -self.config.stepVoltage
+
+    def on_start(self):
+        self.timer.restart()
+        self.timed_out = False
+        self.was_enabled = True
+
+    def on_end(self):
+        self.was_enabled = False
+        self.mechanism.drive(0.0)
+        self.record_state(State.kNone)
+        self.timer.stop()
+
+    def execute(self):
+        if self.was_enabled:
+            if self.timed_out:
+                return
+            if not self.enabled:
+                self.on_end()
+                return
+        else:
+            if not self.enabled:
+                return
+            self.on_start()
+
+        if self.timer.get() > self.config.timeout:
+            self.on_end()
+            self.timed_out = True
+            return
+
+        self.mechanism.drive(self.outputVolts)
+        self.mechanism.log(self.log)
+        self.record_state(self.state)

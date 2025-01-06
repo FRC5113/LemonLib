@@ -1,5 +1,6 @@
-from wpilib import DriverStation, RobotBase, XboxController, PS5Controller
+from wpilib import DriverStation, RobotBase,SmartDashboard
 from wpilib.interfaces import GenericHID
+
 
 
 class LemonInput:
@@ -35,12 +36,10 @@ class LemonInput:
         "kB": 3,
         "kBack": 9,
         "kLeftBumper": 5,
-        "kLeftTrigger": 7,
         "kLeftStick": 11,
         "kStart": 10,
         "kPS": 13,
         "kRightBumper": 6,
-        "kRightTrigger": 8,
         "kRightStick": 12,
         "kX": 1,
         "kTouchpad": 14,
@@ -49,12 +48,16 @@ class LemonInput:
 
     def __init__(self, port_number: int):
         self.con = GenericHID(port_number)
-        if DriverStation.getJoystickIsXbox(port_number) or RobotBase.isSimulation():
+        if DriverStation.getJoystickIsXbox(port_number):
             self.button_map = self.xbox_buttons
             self.contype = "Xbox"
+        if RobotBase.isSimulation():
+            self.button_map = self.xbox_buttons
+            self.contype = "Sim/Xbox"
         else:
             self.button_map = self.ps5_buttons
             self.contype = "PS5"
+        SmartDashboard.putString("LemonInput/Type", self.contype)
 
     def type(self):
         """Returns the type of controller (Xbox or PS5)."""

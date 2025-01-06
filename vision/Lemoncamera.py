@@ -1,11 +1,12 @@
-from wpimath.geometry import Pose2d, Pose3d, Transform3d
 from photonlibpy.photonCamera import PhotonCamera
 from robotpy_apriltag import AprilTagFieldLayout
+from wpimath.geometry import Pose2d, Pose3d, Transform3d
+import math
 
 
 class LemonCamera(PhotonCamera):
     """Wrapper for photonlibpy PhotonCamera"""
-
+   
     def __init__(
         self,
         name: str,
@@ -38,7 +39,7 @@ class LemonCamera(PhotonCamera):
                     # transform origin in tag space to camera space
                     .transformBy(target.getBestCameraToTarget())
                     # transform tag pose in camera space to robot space
-                    .transformBy(self.camera_to_bot)
+                    .relativeTo(Pose3d().transformBy(self.camera_to_bot))
                     # flatten to 2d space
                     .toPose2d()
                 )
@@ -78,6 +79,7 @@ class LemonCamera(PhotonCamera):
                 return self.tag_poses[id]
             return self.tag_poses[id].relativeTo(Pose2d().relativeTo(robot_pose))
         return None
+    
 
 
 class LemonCameraSim(LemonCamera):
@@ -95,19 +97,21 @@ class LemonCameraSim(LemonCamera):
         self,
         field_layout: AprilTagFieldLayout,
         fov: float,
+        camera_to_bot: Transform3d,
     ):
         """Args:
         field_layout (AprilTagFieldLayout): layout of the tags on the field, such as
             `AprilTagField.k2024Crescendo`
         fov (float): horizontal range of vision (degrees)
         """
-        LemonCamera.__init__(self, "Sim", Transform3d())
+        LemonCamera.__init__(self, "Sim", camera_to_bot)
         self.field_layout = field_layout
         self.fov = fov
         self.robot_pose = None
         self.tag_poses = {}
         self.tag_ambiguities = {}
         self.latency = 0
+        self.camera_to_bot = camera_to_bot
 
     def set_robot_pose(self, pose: Pose2d):
         self.robot_pose = pose
@@ -120,7 +124,7 @@ class LemonCameraSim(LemonCamera):
         self.latency = 0.02
         for tag in self.field_layout.getTags():
             tag_pose = tag.pose.toPose2d()
-            relative_pose = tag_pose.relativeTo(self.robot_pose)
+            relative_pose = tag_pose.relativeTo(self.robot_pose.transformBy(self.camera_to_bot))
             dist = relative_pose.translation().norm()
             # calculate estimated tag ambiguity based on distance and angle
             ambiguity = (

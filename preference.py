@@ -82,19 +82,19 @@ class SmartController(ProfiledPIDController, Sendable):
     def setS(self, value: float) -> None:
         """Set feedfoward kS to `value`"""
         self.feedforward = SimpleMotorFeedforwardMeters(
-            value, self.feedforward.kV, self.feedforward.kA
+            value, self.feedforward.getKv(), self.feedforward.getKa()
         )
 
     def setV(self, value: float) -> None:
         """Set feedfoward kV to `value`"""
         self.feedforward = SimpleMotorFeedforwardMeters(
-            self.feedforward.kS, value, self.feedforward.kA
+            self.feedforward.getKs(), value, self.feedforward.getKa()
         )
 
     def setA(self, value: float) -> None:
         """Set feedfoward kA to `value`"""
         self.feedforward = SimpleMotorFeedforwardMeters(
-            self.feedforward.kS, self.feedforward.kV, value
+            self.feedforward.getKs(), self.feedforward.getKv(), value
         )
 
     def setMaxV(self, value: float) -> None:

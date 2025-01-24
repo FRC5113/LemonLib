@@ -1,276 +1,356 @@
 from wpilib import Preferences, SmartDashboard
 from wpimath.trajectory import TrapezoidProfile
-from wpimath.controller import ProfiledPIDController, SimpleMotorFeedforwardMeters
+from wpimath.controller import PIDController, SimpleMotorFeedforwardMeters
 from wpiutil import Sendable, SendableBuilder
 from wpilib import Preferences, SmartDashboard
 from wpimath.trajectory import TrapezoidProfile
 from wpimath.controller import ProfiledPIDController, SimpleMotorFeedforwardMeters
 from wpiutil import Sendable, SendableBuilder
 
-class SmartController(ProfiledPIDController, Sendable):
-    """Wraps a `ProfiledPIDController` and a `SimpleMotorFeedforward`
-    together and uses Preferences to allow for dynamic gain setting.
-    This should **only** be created from the `create_controller()`
-    method in `SmartProfile`
-    """
+# class SmartController(ProfiledPIDController, Sendable):
+#     """Wraps a `ProfiledPIDController` and a `SimpleMotorFeedforward`
+#     together and uses Preferences to allow for dynamic gain setting.
+#     This should **only** be created from the `create_controller()`
+#     method in `SmartProfile`
+#     """
 
-    def __init__(self, key, gains, low_bandwidth) -> None:
-        ProfiledPIDController.__init__(
-            self, 0, 0, 0, TrapezoidProfile.Constraints(0, 0), 0.02
-        )
-        self.feedforward = SimpleMotorFeedforwardMeters(0, 0, 0)
-        Sendable.__init__(self)
-        self._gains = gains
-        for gain in self._gains:
-            gain.update_controller(self)
-        self._measurement = None
-        self._output = 0
+#     def __init__(self, key, gains, low_bandwidth) -> None:
+#         ProfiledPIDController.__init__(
+#             self, 0, 0, 0, TrapezoidProfile.Constraints(0, 0), 0.02
+#         )
+#         self.feedforward = SimpleMotorFeedforwardMeters(0, 0, 0)
+#         Sendable.__init__(self)
+#         self._gains = gains
+#         for gain in self._gains:
+#             gain.update_controller(self)
+#         self._measurement = None
+#         self._output = 0
+#         if not low_bandwidth:
+#             SmartDashboard.putData(f"{key}_controller", self)
+
+#     def initSendable(self, builder: SendableBuilder) -> None:
+#         builder.setSmartDashboardType("SmartController")
+#         builder.addDoubleProperty(
+#             "Setpoint", lambda: self.getSetpoint().position, lambda _: None
+#         )
+#         builder.addDoubleProperty(
+#             "Goal", lambda: self.getGoal().position, lambda _: None
+#         )
+#         builder.addDoubleProperty(
+#             "Measurement", lambda: self.getMeasurement(), lambda _: None
+#         )
+#         builder.addDoubleProperty(
+#             "Error", lambda: self.getPositionError(), lambda _: None
+#         )
+#         builder.addDoubleProperty("Output", lambda: self.getOutput(), lambda _: None)
+
+#     def _update(self):
+#         for gain in self._gains:
+#             gain.update_controller(self)
+
+#     def calculate(self, measurement: float, goal: float = None) -> float:
+#         """Overridden. Get output based on a provided measurement and a
+#         goal.
+
+#         Args:
+#             measurement (float): measurement of the process variable
+#             goal (float, optional): goal position. Defaults to None.
+
+#         Returns:
+#             float: output from feedforward and profiledpid
+#         """
+#         self._measurement = measurement
+#         self._update()
+#         self._output = self.feedforward.calculate(self.getSetpoint().position)
+#         if goal is None:
+#             self._output += super().calculate(measurement)
+#         else:
+#             self.setGoal(goal)
+#             self._output += super().calculate(measurement)
+#         return self._output
+
+#     def getMeasurement(self) -> float:
+#         """Returns measurement most recently passed to `calculate()`"""
+#         if self._measurement is None:
+#             return 0
+#         return self._measurement
+
+#     def getOutput(self) -> float:
+#         """Returns most recent output from `calculate()`"""
+#         return self._output
+
+#     def setS(self, value: float) -> None:
+#         """Set feedfoward kS to `value`"""
+#         self.feedforward = SimpleMotorFeedforwardMeters(
+#             value, self.feedforward.getKv(), self.feedforward.getKa()
+#         )
+
+#     def setV(self, value: float) -> None:
+#         """Set feedfoward kV to `value`"""
+#         self.feedforward = SimpleMotorFeedforwardMeters(
+#             self.feedforward.getKs(), value, self.feedforward.getKa()
+#         )
+
+#     def setA(self, value: float) -> None:
+#         """Set feedfoward kA to `value`"""
+#         self.feedforward = SimpleMotorFeedforwardMeters(
+#             self.feedforward.getKs(), self.feedforward.getKv(), value
+#         )
+
+#     def setMaxV(self, value: float) -> None:
+#         """Set max velocity to `value`"""
+#         constraints = self.getConstraints()
+#         self.setConstraints(
+#             TrapezoidProfile.Constraints(value, constraints.maxAcceleration)
+#         )
+
+#     def setMaxA(self, value: float) -> None:
+#         """Set max acceleration to `value`"""
+#         constraints = self.getConstraints()
+#         self.setConstraints(
+#             TrapezoidProfile.Constraints(constraints.maxVelocity, value)
+#         )
+
+# class SmartGain:
+#     """Used internally by SmartProfile and SmartController"""
+
+#     def __init__(self, key, value, updater, low_bandwidth):
+#         if not low_bandwidth:
+#             Preferences.initDouble(key, value)
+#         self.key = key
+#         self.value = value if low_bandwidth else Preferences.getDouble(key, value)
+#         self.updater = updater
+#         self.low_bandwidth = low_bandwidth
+
+#     def set(self, value):
+#         if value != self.value:
+#             self.value = value
+#             if self.low_bandwidth:
+#                 return
+#             Preferences.setDouble(self.key, self.value)
+
+#     def get(self):
+#         if self.low_bandwidth:
+#             return self.value
+#         from_preferences = Preferences.getDouble(self.key, self.value)
+#         if self.value != from_preferences:
+#             self.value = from_preferences
+#         return self.value
+
+#     def update_controller(self, controller):
+#         self.updater(controller, self.value)
+
+
+class SmartController(Sendable):
+
+    def __init__(self, key: str, calculate_method, low_bandwidth):
+        self._calculate_method = calculate_method
+        self.reference = 0
+        self.measurement = 0
+        self.error = 0
+        self.output = 0
         if not low_bandwidth:
             SmartDashboard.putData(f"{key}_controller", self)
 
-    def initSendable(self, builder: SendableBuilder) -> None:
+    def initSendable(self, builder: SendableBuilder):
         builder.setSmartDashboardType("SmartController")
+        builder.addDoubleProperty("Reference", lambda: self.reference, lambda _: None)
         builder.addDoubleProperty(
-            "Setpoint", lambda: self.getSetpoint().position, lambda _: None
+            "Measurement", lambda: self.measurement, lambda _: None
         )
-        builder.addDoubleProperty(
-            "Goal", lambda: self.getGoal().position, lambda _: None
-        )
-        builder.addDoubleProperty(
-            "Measurement", lambda: self.getMeasurement(), lambda _: None
-        )
-        builder.addDoubleProperty(
-            "Error", lambda: self.getPositionError(), lambda _: None
-        )
-        builder.addDoubleProperty("Output", lambda: self.getOutput(), lambda _: None)
+        builder.addDoubleProperty("Error", lambda: self.error, lambda _: None)
+        builder.addDoubleProperty("Output", lambda: self.output, lambda _: None)
 
-    def _update(self):
-        for gain in self._gains:
-            gain.update_controller(self)
-
-    def calculate(self, measurement: float, goal: float = None) -> float:
-        """Overridden. Get output based on a provided measurement and a
-        goal.
-
-        Args:
-            measurement (float): measurement of the process variable
-            goal (float, optional): goal position. Defaults to None.
-
-        Returns:
-            float: output from feedforward and profiledpid
-        """
-        self._measurement = measurement
-        self._update()
-        self._output = self.feedforward.calculate(self.getSetpoint().position)
-        if goal is None:
-            self._output += super().calculate(measurement)
-        else:
-            self.setGoal(goal)
-            self._output += super().calculate(measurement)
-        return self._output
-
-    def getMeasurement(self) -> float:
-        """Returns measurement most recently passed to `calculate()`"""
-        if self._measurement is None:
-            return 0
-        return self._measurement
-
-    def getOutput(self) -> float:
-        """Returns most recent output from `calculate()`"""
-        return self._output
-
-    def setS(self, value: float) -> None:
-        """Set feedfoward kS to `value`"""
-        self.feedforward = SimpleMotorFeedforwardMeters(
-            value, self.feedforward.getKv(), self.feedforward.getKa()
-        )
-
-    def setV(self, value: float) -> None:
-        """Set feedfoward kV to `value`"""
-        self.feedforward = SimpleMotorFeedforwardMeters(
-            self.feedforward.getKs(), value, self.feedforward.getKa()
-        )
-
-    def setA(self, value: float) -> None:
-        """Set feedfoward kA to `value`"""
-        self.feedforward = SimpleMotorFeedforwardMeters(
-            self.feedforward.getKs(), self.feedforward.getKv(), value
-        )
-
-    def setMaxV(self, value: float) -> None:
-        """Set max velocity to `value`"""
-        constraints = self.getConstraints()
-        self.setConstraints(
-            TrapezoidProfile.Constraints(value, constraints.maxAcceleration)
-        )
-
-    def setMaxA(self, value: float) -> None:
-        """Set max acceleration to `value`"""
-        constraints = self.getConstraints()
-        self.setConstraints(
-            TrapezoidProfile.Constraints(constraints.maxVelocity, value)
-        )
-
-from wpilib import Preferences, SmartDashboard
-from wpimath.trajectory import TrapezoidProfile
-from wpimath.controller import ProfiledPIDController, SimpleMotorFeedforwardMeters
-from wpiutil import Sendable, SendableBuilder
-
-class SmartGain:
-    """Used internally by SmartProfile and SmartController"""
-
-    def __init__(self, key, value, updater, low_bandwidth):
-        if not low_bandwidth:
-            Preferences.initDouble(key, value)
-        self.key = key
-        self.value = value if low_bandwidth else Preferences.getDouble(key, value)
-        self.updater = updater
-        self.low_bandwidth = low_bandwidth
-
-    def set(self, value):
-        if value != self.value:
-            self.value = value
-            if self.low_bandwidth:
-                return
-            Preferences.setDouble(self.key, self.value)
-
-    def get(self):
-        if self.low_bandwidth:
-            return self.value
-        from_preferences = Preferences.getDouble(self.key, self.value)
-        if self.value != from_preferences:
-            self.value = from_preferences
-        return self.value
-
-    def update_controller(self, controller):
-        self.updater(controller, self.value)
-
-
+    def calculate(self, measurement: float, reference: float):
+        self.reference = reference
+        self.measurement = measurement
+        self.error = reference - measurement
+        self.output = self._calculate_method(measurement, reference)
+        return self.output
 
 
 class SmartProfile(Sendable):
-    """Stores several gains that are commonly used for control. This
-    class allows the use of NetworkTables to change the gains on the
-    fly, and uses Preferences so that the gains are stored locally on
-    the robot. Use the `create_controller()` method to create a
-    `SmartController` with synchronized gains.
-    """
 
-    def __init__(
-        self,
-        key: str,
-        kP=0.0,
-        kI=0.0,
-        kD=0.0,
-        kS=0.0,
-        kV=0.0,
-        kA=0.0,
-        kMaxV=0.0,
-        kMaxA=0.0,
-        continuous_range: tuple[float] = None,
-        low_bandwidth: bool = False,
-    ) -> None:
-        """Create a SmartProfile with the designated gains. There will
-        only be a trapezoidal profile if `kMaxV` and `kMaxA` are set.
-        The input will only be continuous if `continuous_range` is set.
-
-        Args:
-            key (str): Prefix of gains in SmartDashboard
-            kP (float, optional): Proportional term. Defaults to 0.0.
-            kI (float, optional): Integral term. Defaults to 0.0.
-            kD (float, optional): Derivative term. Defaults to 0.0.
-            kS (float, optional): Static voltage. Defaults to 0.0.
-            kV (float, optional): Cruise voltage. Defaults to 0.0.
-            kA (float, optional): Acceleration voltage. Defaults to 0.0.
-            kMaxV (float, optional): Maximum velocity. Defaults to 0.0.
-            kMaxA (float, optional): Maximum acceleration. Defaults to 0.0.
-            continuous_range (tuple[float], optional): Tuple containing
-                minimum and maximum value. Use to specify continuous
-                input. Defaults to None.
-        """
+    def __init__(self, key: str, gains: dict[str][float], tuning_enabled: bool):
         Sendable.__init__(self)
-        self._gains = (
-            SmartGain(
-                f"{key}_kP",
-                kP,
-                (lambda controller, value: controller.setP(value)),
-                low_bandwidth,
-            ),
-            SmartGain(
-                f"{key}_kI",
-                kI,
-                (lambda controller, value: controller.setI(value)),
-                low_bandwidth,
-            ),
-            SmartGain(
-                f"{key}_kD",
-                kD,
-                (lambda controller, value: controller.setD(value)),
-                low_bandwidth,
-            ),
-            SmartGain(
-                f"{key}_kS",
-                kS,
-                (lambda controller, value: controller.setS(value)),
-                low_bandwidth,
-            ),
-            SmartGain(
-                f"{key}_kV",
-                kV,
-                (lambda controller, value: controller.setV(value)),
-                low_bandwidth,
-            ),
-            SmartGain(
-                f"{key}_kA",
-                kA,
-                (lambda controller, value: controller.setA(value)),
-                low_bandwidth,
-            ),
-            SmartGain(
-                f"{key}_kMaxV",
-                kMaxV,
-                (lambda controller, value: controller.setMaxV(value)),
-                low_bandwidth,
-            ),
-            SmartGain(
-                f"{key}_kMaxA",
-                kMaxA,
-                (lambda controller, value: controller.setMaxA(value)),
-                low_bandwidth,
-            ),
-        )
-        self.continuous_range = continuous_range
-        self.low_bandwidth = low_bandwidth
-        if not low_bandwidth:
+        self.gains = gains
+        self.tuning_enabled = tuning_enabled
+        if tuning_enabled:
             SmartDashboard.putData(f"{key}_profile", self)
 
-    def initSendable(self, builder: SendableBuilder) -> None:
+    def initSendable(self, builder: SendableBuilder):
         builder.setSmartDashboardType("SmartProfile")
-        for i in range(len(self._gains)):
+        for gain_key in self.gains:
             builder.addDoubleProperty(
-                self._gains[i].key, self._gains[i].get, self._create_setter(i)
+                gain_key,
+                (lambda: self.gains[gain_key]),
+                (lambda value: self._set_gain(gain_key, value)),
             )
 
-    def _create_setter(self, index):
-        # used to avoid late binding
-        return lambda x: self._gains[index].set(x)
+    def _set_gain(self, key: str, value: float):
+        self.gains[key] = value
 
-    def create_controller(self, key) -> SmartController:
-        """Creates new `SmartController` with synchronized gains. This
-        should be the only way that SmartControllers are created.
+    def _requires(requirements: set[str]):
+        def inner(func):
+            def wrapper(self, key, low_bandwidth):
+                missing_reqs = requirements - set(self.gains.keys())
+                assert missing_reqs == "", f"Requires gains: {', '.join(missing_reqs)}"
+                func(self, key, low_bandwidth)
 
-        Args:
-            period_getter: function that returns period
+            return wrapper
 
-        Returns:
-            SmartController: Created SmartController
-        """
-        controller = SmartController(key, self._gains, self.low_bandwidth)
-        if self.continuous_range is not None:
-            controller.enableContinuousInput(
-                self.continuous_range[0], self.continuous_range[1]
-            )
-        return controller
+        return inner
+
+    @_requires({"kP", "kI", "kD"})
+    def create_pid_controller(
+        self, key: str, low_bandwidth: bool = None
+    ) -> SmartController:
+        controller = PIDController(self.gains["kP"], self.gains["kI"], self.gains["kD"])
+        return SmartController(
+            key,
+            (lambda y, r: controller.calculate(y, r)),
+            self.tuning_enabled if low_bandwidth is None else low_bandwidth,
+        )
+
+    @_requires({"kS", "kV"})
+    def create_simple_feedforward(
+        self, key: str, low_bandwidth: bool = None
+    ) -> SmartController:
+        controller = SimpleMotorFeedforwardMeters(
+            self.gains["kS"],
+            self.gains["kV"],
+            self.gains["kA"] if "kA" in self.gains else 0,
+        )
+        return SmartController(
+            key,
+            (lambda y, r: controller.calculate(r)),
+            self.tuning_enabled if low_bandwidth is None else low_bandwidth,
+        )
+
+
+# class SmartProfile(Sendable):
+#     """Stores several gains that are commonly used for control. This
+#     class allows the use of NetworkTables to change the gains on the
+#     fly, and uses Preferences so that the gains are stored locally on
+#     the robot. Use the `create_controller()` method to create a
+#     `SmartController` with synchronized gains.
+#     """
+
+#     def __init__(
+#         self,
+#         key: str,
+#         kP=0.0,
+#         kI=0.0,
+#         kD=0.0,
+#         kS=0.0,
+#         kV=0.0,
+#         kA=0.0,
+#         kMaxV=0.0,
+#         kMaxA=0.0,
+#         continuous_range: tuple[float] = None,
+#         low_bandwidth: bool = False,
+#     ) -> None:
+#         """Create a SmartProfile with the designated gains. There will
+#         only be a trapezoidal profile if `kMaxV` and `kMaxA` are set.
+#         The input will only be continuous if `continuous_range` is set.
+
+#         Args:
+#             key (str): Prefix of gains in SmartDashboard
+#             kP (float, optional): Proportional term. Defaults to 0.0.
+#             kI (float, optional): Integral term. Defaults to 0.0.
+#             kD (float, optional): Derivative term. Defaults to 0.0.
+#             kS (float, optional): Static voltage. Defaults to 0.0.
+#             kV (float, optional): Cruise voltage. Defaults to 0.0.
+#             kA (float, optional): Acceleration voltage. Defaults to 0.0.
+#             kMaxV (float, optional): Maximum velocity. Defaults to 0.0.
+#             kMaxA (float, optional): Maximum acceleration. Defaults to 0.0.
+#             continuous_range (tuple[float], optional): Tuple containing
+#                 minimum and maximum value. Use to specify continuous
+#                 input. Defaults to None.
+#         """
+#         Sendable.__init__(self)
+#         self._gains = (
+#             SmartGain(
+#                 f"{key}_kP",
+#                 kP,
+#                 (lambda controller, value: controller.setP(value)),
+#                 low_bandwidth,
+#             ),
+#             SmartGain(
+#                 f"{key}_kI",
+#                 kI,
+#                 (lambda controller, value: controller.setI(value)),
+#                 low_bandwidth,
+#             ),
+#             SmartGain(
+#                 f"{key}_kD",
+#                 kD,
+#                 (lambda controller, value: controller.setD(value)),
+#                 low_bandwidth,
+#             ),
+#             SmartGain(
+#                 f"{key}_kS",
+#                 kS,
+#                 (lambda controller, value: controller.setS(value)),
+#                 low_bandwidth,
+#             ),
+#             SmartGain(
+#                 f"{key}_kV",
+#                 kV,
+#                 (lambda controller, value: controller.setV(value)),
+#                 low_bandwidth,
+#             ),
+#             SmartGain(
+#                 f"{key}_kA",
+#                 kA,
+#                 (lambda controller, value: controller.setA(value)),
+#                 low_bandwidth,
+#             ),
+#             SmartGain(
+#                 f"{key}_kMaxV",
+#                 kMaxV,
+#                 (lambda controller, value: controller.setMaxV(value)),
+#                 low_bandwidth,
+#             ),
+#             SmartGain(
+#                 f"{key}_kMaxA",
+#                 kMaxA,
+#                 (lambda controller, value: controller.setMaxA(value)),
+#                 low_bandwidth,
+#             ),
+#         )
+#         self.continuous_range = continuous_range
+#         self.low_bandwidth = low_bandwidth
+#         if not low_bandwidth:
+#             SmartDashboard.putData(f"{key}_profile", self)
+
+#     def initSendable(self, builder: SendableBuilder) -> None:
+#         builder.setSmartDashboardType("SmartProfile")
+#         for i in range(len(self._gains)):
+#             builder.addDoubleProperty(
+#                 self._gains[i].key, self._gains[i].get, self._create_setter(i)
+#             )
+
+#     def _create_setter(self, index):
+#         # used to avoid late binding
+#         return lambda x: self._gains[index].set(x)
+
+#     def create_controller(self, key) -> SmartController:
+#         """Creates new `SmartController` with synchronized gains. This
+#         should be the only way that SmartControllers are created.
+
+#         Args:
+#             period_getter: function that returns period
+
+#         Returns:
+#             SmartController: Created SmartController
+#         """
+#         controller = SmartController(key, self._gains, self.low_bandwidth)
+#         if self.continuous_range is not None:
+#             controller.enableContinuousInput(
+#                 self.continuous_range[0], self.continuous_range[1]
+#             )
+#         return controller
 
 
 class SmartPreference(object):

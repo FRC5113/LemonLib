@@ -1,10 +1,14 @@
 from wpilib import Preferences, SmartDashboard
 from wpimath.trajectory import TrapezoidProfile
-from wpimath.controller import PIDController, SimpleMotorFeedforwardMeters
 from wpiutil import Sendable, SendableBuilder
 from wpilib import Preferences, SmartDashboard
 from wpimath.trajectory import TrapezoidProfile
-from wpimath.controller import ProfiledPIDController, SimpleMotorFeedforwardMeters
+from wpimath.controller import (
+    PIDController,
+    ProfiledPIDController,
+    SimpleMotorFeedforwardMeters,
+    ElevatorFeedforward,
+)
 from wpiutil import Sendable, SendableBuilder
 
 # class SmartController(ProfiledPIDController, Sendable):
@@ -171,12 +175,18 @@ class SmartController(Sendable):
 
 class SmartProfile(Sendable):
 
-    def __init__(self, key: str, gains: dict[str][float], tuning_enabled: bool):
+    def __init__(self, profile_key: str, gains: dict[str][float], tuning_enabled: bool):
         Sendable.__init__(self)
-        self.gains = gains
+        self.profile_key = profile_key
         self.tuning_enabled = tuning_enabled
         if tuning_enabled:
-            SmartDashboard.putData(f"{key}_profile", self)
+            for gain in gains:
+                Preferences.initDouble(f"{profile_key}_{gain}", gains[gain])
+                gains[gain] = Preferences.getDouble(
+                    f"{profile_key}_{gain}", gains[gain]
+                )
+            self.gains = gains
+            SmartDashboard.putData(f"{profile_key}_profile", self)
 
     def initSendable(self, builder: SendableBuilder):
         builder.setSmartDashboardType("SmartProfile")
@@ -189,6 +199,8 @@ class SmartProfile(Sendable):
 
     def _set_gain(self, key: str, value: float):
         self.gains[key] = value
+        if self.tuning_enabled:
+            Preferences.setDouble(f"{self.profile_key}_{key}", value)
 
     def _requires(requirements: set[str]):
         def inner(func):
@@ -206,6 +218,30 @@ class SmartProfile(Sendable):
         self, key: str, low_bandwidth: bool = None
     ) -> SmartController:
         controller = PIDController(self.gains["kP"], self.gains["kI"], self.gains["kD"])
+        if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
+            controller.enableContinuousInput(
+                self.gains["kMinInput"], self.gains["kMaxInput"]
+            )
+        return SmartController(
+            key,
+            (lambda y, r: controller.calculate(y, r)),
+            self.tuning_enabled if low_bandwidth is None else low_bandwidth,
+        )
+
+    @_requires({"kP", "kI", "kD", "kMaxV", "kMaxA"})
+    def create_profiled_pid_controller(
+        self, key: str, low_bandwidth: bool = None
+    ) -> SmartController:
+        controller = ProfiledPIDController(
+            self.gains["kP"],
+            self.gains["kI"],
+            self.gains["kD"],
+            TrapezoidProfile.Constraints(self.gains["kMaxV"], self.gains["kMaxA"]),
+        )
+        if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
+            controller.enableContinuousInput(
+                self.gains["kMinInput"], self.gains["kMaxInput"]
+            )
         return SmartController(
             key,
             (lambda y, r: controller.calculate(y, r)),
@@ -224,6 +260,87 @@ class SmartProfile(Sendable):
         return SmartController(
             key,
             (lambda y, r: controller.calculate(r)),
+            self.tuning_enabled if low_bandwidth is None else low_bandwidth,
+        )
+
+    @_requires({"kP", "kI", "kD", "kS", "kV"})
+    def create_flywheel_controller(
+        self, key: str, low_bandwidth: bool = None
+    ) -> SmartController:
+        pid = PIDController(self.gains["kP"], self.gains["kI"], self.gains["kD"])
+        if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
+            pid.enableContinuousInput(self.gains["kMinInput"], self.gains["kMaxInput"])
+        feedforward = SimpleMotorFeedforwardMeters(
+            self.gains["kS"],
+            self.gains["kV"],
+            self.gains["kA"] if "kA" in self.gains else 0,
+        )
+        return SmartController(
+            key,
+            (lambda y, r: pid.calculate(y, r) + feedforward.calculate(r)),
+            self.tuning_enabled if low_bandwidth is None else low_bandwidth,
+        )
+
+    @_requires({"kP", "kI", "kD", "kS", "kV", "kMaxV", "kMaxA"})
+    def create_turret_controller(
+        self, key: str, low_bandwidth: bool = None
+    ) -> SmartController:
+        pid = ProfiledPIDController(
+            self.gains["kP"],
+            self.gains["kI"],
+            self.gains["kD"],
+            TrapezoidProfile.Constraints(self.gains["kMaxV"], self.gains["kMaxA"]),
+        )
+        if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
+            pid.enableContinuousInput(self.gains["kMinInput"], self.gains["kMaxInput"])
+        feedforward = SimpleMotorFeedforwardMeters(
+            self.gains["kS"],
+            self.gains["kV"],
+            self.gains["kA"] if "kA" in self.gains else 0,
+        )
+
+        def calculate(y, r):
+            pid_output = pid.calculate(y, r)
+            setpoint = pid.getSetpoint()
+            # add acceleration eventually
+            feedforward_output = feedforward.calculate(setpoint.velocity)
+            return pid_output + feedforward_output
+
+        return SmartController(
+            key,
+            calculate,
+            self.tuning_enabled if low_bandwidth is None else low_bandwidth,
+        )
+
+    @_requires({"kP", "kI", "kD", "kS", "kG", "kV", "kMaxV", "kMaxA"})
+    def create_elevator_controller(
+        self, key: str, low_bandwidth: bool = None
+    ) -> SmartController:
+        pid = ProfiledPIDController(
+            self.gains["kP"],
+            self.gains["kI"],
+            self.gains["kD"],
+            TrapezoidProfile.Constraints(self.gains["kMaxV"], self.gains["kMaxA"]),
+        )
+        if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
+            pid.enableContinuousInput(self.gains["kMinInput"], self.gains["kMaxInput"])
+        feedforward = ElevatorFeedforward(
+            self.gains["kS"],
+            self.gains["kG"],
+            self.gains["kV"],
+            self.gains["kA"] if "kA" in self.gains else 0,
+        )
+
+        def calculate(y, r):
+            pid_output = pid.calculate(y, r)
+            setpoint = pid.getSetpoint()
+            # add acceleration eventually
+            feedforward_output = feedforward.calculate(setpoint.velocity)
+            return pid_output + feedforward_output
+
+        return SmartController(
+            key,
+            calculate,
             self.tuning_enabled if low_bandwidth is None else low_bandwidth,
         )
 

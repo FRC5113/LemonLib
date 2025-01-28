@@ -16,7 +16,7 @@ setup(
                     'flexcache==0.3',
                     'flexparser==0.4',
                     'iniconfig==2.0.0',
-                    'msvc_runtime==14.42.34433',
+                    # 'msvc_runtime==14.42.34433',
                     'numpy==2.2.2',
                     'opencv-python==4.11.0.86',
                     'packaging==23.2',

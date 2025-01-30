@@ -10,7 +10,7 @@ setup(
     license='Unlicense',
     packages=['lemonlib'],
     install_requires=[
-                    'phoenix6==25.2.1',
+                    'phoenix6==25.1.0',
                     'photonlibpy==2025.1.1',
                     'robotpy-apriltag==2025.2.1',
                     'robotpy-commands-v2==2025.1.1',

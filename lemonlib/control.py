@@ -51,7 +51,7 @@ class LemonInput:
         if RobotBase.isSimulation():
             self.button_map = self.xbox_buttons
             self.contype = "Sim/Xbox"
-        if DriverStation.getJoystickIsXbox(port_number):
+        elif DriverStation.getJoystickIsXbox(port_number):
             self.button_map = self.xbox_buttons
             self.contype = "Xbox"
         else:

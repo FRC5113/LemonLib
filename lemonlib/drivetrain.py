@@ -1,13 +1,15 @@
 import wpilib
 import wpilib.drive
-from wpilib.drive import RobotDriveBase
+from wpilib.drive import RobotDriveBase,DifferentialDrive,MecanumDrive
 from wpilib import SmartDashboard,RobotBase
 from wpimath import applyDeadband
 from lemonlib.preference import SmartPreference
 import math
+from wpiutil import Sendable,SendableBuilder
+from wpilib import interfaces,Spark
+from wpimath import geometry
 
-
-class SwagDrive(RobotDriveBase):
+class SwagDrive(Sendable):
     maxspeed = SmartPreference(0.8)
     defspeed = SmartPreference(0.5)
     swagadd = SmartPreference(1)
@@ -16,27 +18,20 @@ class SwagDrive(RobotDriveBase):
     swagmulti = SmartPreference(10)
 
     def __init__(self, leftMotor, rightMotor):
+        Sendable.__init__(self)
         self.leftMotor = leftMotor
         self.rightMotor = rightMotor
-        self.robotDrive = wpilib.drive.DifferentialDrive(self.leftMotor, self.rightMotor)
+        self.robotDrive = DifferentialDrive(self.leftMotor, self.rightMotor)
+
+
+        # Swag-related variables
+        self.swagLevel = 0
+        self.swagPeriod = 0
+        self.oldMove = 0
+        self.oldRotate = 0
 
     def Drive(self, moveValue, rotateValue):
-        """Custom drive function that incorporates 'swag' logic
-                https://www.chiefdelphi.com/t/introducing-swagdrive-the-drive-code-of-the-future/129519
-        ```
-        So I attended the World Championships this year. It was great seeing all these high level robots.
-        However, I had a problem with them, they drove too straight. They drove with too much precision. There was no sense of “YOLO”, the robots did not drive with enough swag.
-        So I decided to remedy this issue at the programming level, by creating SwagDrive. SwagDrive increases the robot’s level of swag by at least ten-fold.
-        By using new and innovative algorithms (or rather “swagorithms”), SwagDrive decreases the robot’s consistency and accuracy so that when it drives on the playing field it
-        looks a lot cooler.
-
-        It is similar to ArcadeDrive with some important modifications. If the change on an axis is not larger than the “swag barrier”, it will multiplied by the
-        “swag multiplier” in order to “swag up” the driver’s inputs. If the input is larger then the “swag barrier” for that particular cycle, then the robot’s “swag level”
-        increases by one. If the “swag level” becomes over 9000 the robot enters a moment of ultimate swag and rotates for one “swag period” (truly a YOLO move).
-        Many of these values need to be tuned and modified to achieve optimal swag.
-
-        ```
-        """
+        """Custom drive function that incorporates 'swag' logic."""
 
         SWAG_BARRIER = self.minswag
         SWAG_MULTIPLIER = self.swagmulti
@@ -47,9 +42,11 @@ class SwagDrive(RobotDriveBase):
         moveToSend = moveValue
         rotateToSend = rotateValue
 
+
+
         if self.swagPeriod == 0:
-            moveDiff = abs(moveValue) + abs(self.oldMove)
-            rotateDiff = abs(rotateValue) + abs(self.oldRotate)
+            moveDiff = abs(moveValue - self.oldMove)
+            rotateDiff = abs(rotateValue - self.oldRotate)
 
             if moveDiff < SWAG_BARRIER:
                 moveToSend = (moveDiff * SWAG_MULTIPLIER) + moveValue
@@ -65,24 +62,29 @@ class SwagDrive(RobotDriveBase):
                 self.swagPeriod = SWAG_PERIOD
                 self.swagLevel = 0
 
-            SmartDashboard.putNumber("Swag Level", self.swagLevel)
-            SmartDashboard.putNumber("Move Diff", moveDiff)
-            SmartDashboard.putNumber("Rotate Diff", rotateDiff)
-            SmartDashboard.putNumber("Period", SWAG_PERIOD)
-            
+
         else:
             moveToSend = 0
             rotateToSend = 1.0
             self.swagPeriod -= 1
-
+         
+        self.rotatediff = rotateDiff
+        self.movediff = moveDiff
         # Call arcadeDrive with modified move and rotate values
-
         self.robotDrive.arcadeDrive(moveToSend, rotateToSend)
 
         self.oldMove = moveValue
         self.oldRotate = rotateValue
+    def initSendable(self, builder):
+        builder.setSmartDashboardType("SwagDrive")
+        builder.addDoubleProperty("Swag Level", lambda: self.swagLevel, lambda _: None)
+        builder.addDoubleProperty("Swag Period", lambda: self.swagPeriod, lambda _: None)
+        builder.addDoubleProperty("Rotate Diff", lambda: self.rotatediff, lambda _: None)
+        builder.addDoubleProperty("Move Diff", lambda: self.movediff, lambda _: None)
+        self.robotDrive.initSendable(builder)
 
-class KilloughDrive(RobotDriveBase):
+
+class KilloughDrive(RobotDriveBase, Sendable):
     r"""A class for driving Killough drive platforms.
 
     Killough drives are triangular with one omni wheel on each corner.
@@ -131,10 +133,14 @@ class KilloughDrive(RobotDriveBase):
         :param backMotorAngle: The angle of the back wheel's forward direction of travel
         """
         super().__init__()
+        Sendable.__init__(self)
 
         self.leftMotor = leftMotor
         self.rightMotor = rightMotor
         self.backMotor = backMotor
+       
+        self.mechDrive = MecanumDrive(self.leftMotor, self.rightMotor, self.backMotor, Spark(19))
+        
 
         self.leftVec = Vector2d(math.cos(math.radians(leftMotorAngle)),
                                 math.sin(math.radians(leftMotorAngle)))
@@ -158,17 +164,11 @@ class KilloughDrive(RobotDriveBase):
                           this to implement field-oriented controls.
         """
 
-        if not self.reported:
-            # hal.report(hal.UsageReporting.kResourceType_RobotDrive,
-            #           3,
-            #           hal.UsageReporting.kRobotDrive_Curvature)
-            self.reported = True
-
         ySpeed = Legacy.limit(ySpeed)
-        ySpeed = Legacy.applyDeadband(ySpeed, self.deadband)
+        ySpeed = Legacy.applyDeadband(ySpeed, self._m_deadband)
 
         xSpeed = Legacy.limit(xSpeed)
-        xSpeed = Legacy.applyDeadband(xSpeed, self.deadband)
+        xSpeed = Legacy.applyDeadband(xSpeed, self._m_deadband)
 
         # Compensate for gyro angle
         input = Vector2d(ySpeed, xSpeed)
@@ -180,11 +180,12 @@ class KilloughDrive(RobotDriveBase):
 
         Legacy.normalize(wheelSpeeds)
 
-        self.leftMotor.set(wheelSpeeds[0] * self.maxOutput)
-        self.rightMotor.set(wheelSpeeds[1] * self.maxOutput)
-        self.backMotor.set(wheelSpeeds[2] * self.maxOutput)
+        self.leftMotor.set(wheelSpeeds[0] * self._m_maxOutput)
+        self.rightMotor.set(wheelSpeeds[1] * self._m_maxOutput)
+        self.backMotor.set(wheelSpeeds[2] * self._m_maxOutput)
 
         self.feed()
+        self.mechDrive.driveCartesian(ySpeed, xSpeed, zRotation)
 
 
     def drivePolar(self, magnitude, angle, zRotation):
@@ -202,7 +203,7 @@ class KilloughDrive(RobotDriveBase):
 
         self.driveCartesian(magnitude * math.cos(math.radians(angle)), magnitude * math.sin(math.radians(angle)),
                             zRotation, 0)
-
+    
 
     def stopMotor(self):
         self.leftMotor.stopMotor()
@@ -220,6 +221,7 @@ class KilloughDrive(RobotDriveBase):
         builder.addDoubleProperty("Left Motor Speed", self.leftMotor.get, self.leftMotor.set)
         builder.addDoubleProperty("Right Motor Speed", self.rightMotor.get, self.rightMotor.set)
         builder.addDoubleProperty("Back Motor Speed", self.backMotor.get, self.backMotor.set)
+        self.mechDrive.initSendable(builder)
 class Vector2d:
     """This is a 2D vector struct that supports basic operations"""
     def __init__(self, x=0.0, y=0.0):

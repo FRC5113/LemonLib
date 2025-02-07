@@ -175,3 +175,8 @@ networktables.json.bck
 /.idea
 
 grapplelib/
+
+#debugging stuff
+physics.py
+pyproject.toml
+robot.py

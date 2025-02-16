@@ -1,10 +1,13 @@
-from wpilib import DriverStation, RobotBase,SmartDashboard
+from wpilib import DriverStation, RobotBase
 from wpilib.interfaces import GenericHID
+from wpiutil import Sendable, SendableBuilder
 
 
+class LemonInput(Sendable):
+    """
+    LemonInput is a wrapper class for Xbox and PS5 controllers allowing automatic or manual detection and use in code.
+    """
 
-class LemonInput:
-    """Wrapper class for Xbox and PS5 controllers allowing automatic detection and use in code."""
 
     xbox_buttons = {
         "kLeftTrigger": 2,
@@ -46,18 +49,45 @@ class LemonInput:
         "kY": 4,
     }
 
-    def __init__(self, port_number: int):
+
+
+    def __init__(self, port_number: int, type: str = "auto"):
+        """
+        Initializes the control object with the specified port number and type.
+        Args:
+            port_number (int): The port number of the controller.
+            type (str, optional): The type of the controller. Defaults to "auto".
+                - "auto": Automatically detects the controller type.
+                - "Xbox": Forces the controller type to Xbox.
+                - "PS5": Forces the controller type to PS5.
+        """
+        Sendable.__init__(self)
         self.con = GenericHID(port_number)
-        if RobotBase.isSimulation():
-            self.button_map = self.xbox_buttons
-            self.contype = "Sim/Xbox"
-        elif DriverStation.getJoystickIsXbox(port_number):
-            self.button_map = self.xbox_buttons
-            self.contype = "Xbox"
-        else:
-            self.button_map = self.ps5_buttons
-            self.contype = "PS5"
-        SmartDashboard.putString("LemonInput/Type", self.contype)
+        if type == "auto":
+            if RobotBase.isSimulation():
+                self.button_map = self.xbox_buttons
+                self.contype = "Sim/Xbox"
+            elif DriverStation.getJoystickIsXbox(port_number):
+                self.button_map = self.xbox_buttons
+                self.contype = "Xbox"
+            else:
+                    self.button_map = self.ps5_buttons
+                    self.contype = "PS5"
+                    DriverStation.getJoystickType
+        elif type == "Xbox":
+                if RobotBase.isSimulation():
+                    self.button_map = self.xbox_buttons
+                    self.contype = "Sim/Xbox"
+                else:
+                    self.button_map = self.xbox_buttons 
+                    self.contype = "Xbox"
+        elif type == "PS5":
+                if RobotBase.isSimulation():
+                    self.button_map = self.ps5_buttons
+                    self.contype = "Sim/PS5"
+                else:
+                    self.button_map = self.ps5_buttons
+                    self.contype = "PS5"
 
     def type(self):
         """Returns the type of controller (Xbox or PS5)."""
@@ -268,3 +298,31 @@ class LemonInput:
             float: The Y-axis value of the POV.
         """
         return self.__pov_xy()[1]
+
+    def initSendable(self, builder):
+        """
+        Initializes the sendable for the LemonInput class.
+
+        Args:
+            builder: The sendable builder.
+        """
+        builder.setSmartDashboardType("LemonInput")
+        builder.addStringProperty("Type", lambda: self.contype, lambda: None)
+        builder.addBooleanProperty("LeftBumper", lambda: self.leftbumper(), lambda: None)
+        builder.addBooleanProperty("RightBumper", lambda: self.rightbumper(), lambda: None)
+        builder.addBooleanProperty("StartButton", lambda: self.startbutton(), lambda: None)
+        builder.addBooleanProperty("BackButton", lambda: self.backbutton(), lambda: None)
+        builder.addBooleanProperty("AButton", lambda: self.abutton(), lambda: None)
+        builder.addBooleanProperty("BButton", lambda: self.bbutton(), lambda: None)
+        builder.addBooleanProperty("XButton", lambda: self.xbutton(), lambda: None)
+        builder.addBooleanProperty("YButton", lambda: self.ybutton(), lambda: None)
+        builder.addBooleanProperty("LStickButton", lambda: self.lstickbutton(), lambda: None)
+        builder.addBooleanProperty("RStickButton", lambda: self.rstickbutton(), lambda: None)
+        builder.addDoubleProperty("LeftX", lambda: self.leftx(), lambda: None)
+        builder.addDoubleProperty("LeftY", lambda: self.lefty(), lambda: None)
+        builder.addDoubleProperty("RightX", lambda: self.rightx(), lambda: None)
+        builder.addDoubleProperty("RightY", lambda: self.righty(), lambda: None)
+        builder.addDoubleProperty("RightTrigger", lambda: self.righttrigger(), lambda: None)
+        builder.addDoubleProperty("LeftTrigger", lambda: self.lefttrigger(), lambda: None)
+        builder.addDoubleProperty("POV_X", lambda: self.pov_x(), lambda: None)
+        builder.addDoubleProperty("POV_Y", lambda: self.pov_y(), lambda: None)

@@ -6,7 +6,7 @@ from pyfrc.physics.visionsim import VisionSimTarget
 
 
 class LemonCamera(PhotonCamera):
-    """Wrapper for photonlibpy PhotonCamera """
+    """Wrapper for photonlibpy PhotonCamera"""
 
     def __init__(
         self,

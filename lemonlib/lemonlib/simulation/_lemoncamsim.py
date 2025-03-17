@@ -47,7 +47,7 @@ class LemonCameraSim(PhotonCameraSim):
         PhotonCameraSim.__init__(
             self, self.camera, self.camera_props, self.field_layout
         )
-        self.vision_sim.addCamera(self, self.camera.get_transform())
+        self.vision_sim.addCamera(self, self.camera.camera_to_bot)
 
     def update(self, pose: Pose2d) -> None:
         self.vision_sim.update(pose)

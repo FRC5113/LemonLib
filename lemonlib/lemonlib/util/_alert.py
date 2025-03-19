@@ -42,7 +42,7 @@ class Alert:
         self.active = False
         self.active_start_time = 0.0
         self.last_log = 0.0
-        AlertManager.alerts.append(self)
+        AlertManager.alerts.append(self) 
         self.elasticnoti = elasticnoti
 
     def set(self, active: bool):

@@ -44,7 +44,7 @@ class LEDController:
         for i in range(self.length):
             factor = i / (self.length - 1) if self.length > 1 else 0
             r = int(start_r + factor * (end_r - start_r))
-            g = int(start_g + factor * (end_g - start_g))
+            g = int(start_g + factor * (end_g - start_g)) 
             b = int(start_b + factor * (end_b - start_b))
             self.buffer[i].setRGB(r, g, b)
         self.led.setData(self.buffer)

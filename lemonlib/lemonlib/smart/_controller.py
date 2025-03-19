@@ -35,3 +35,4 @@ class SmartController(Sendable):
         self.error = reference - measurement
         self.output = self._calculate_method(measurement, reference)
         return self.output
+ 

@@ -40,7 +40,7 @@ class SmartProfile(Sendable):
         kMaxInput: Maximum expected measurement value (used for continuous input)
 
         :param str profile_key: Prefix for associated NetworkTables keys
-        :param dict[str, float] gains: Dictionary containing gain_key: value pairs
+        :param dict[str, float] gains: Dictionary containing gain_key: value pairs 
         :param bool tuning_enabled: Specify whether or not to send and retrieve
             data from NetworkTables. If true, values from NetworkTables
             are given precedence over values set in code.

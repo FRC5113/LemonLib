@@ -23,7 +23,7 @@ class SwagDrive(Sendable):
         self.swagPeriod = 0
         self.oldMove = 0
         self.oldRotate = 0
-
+ 
     def Drive(self, moveValue, rotateValue):
         """Custom drive function that incorporates 'swag' logic."""
 

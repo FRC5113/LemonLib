@@ -5,7 +5,7 @@ from wpiutil import SendableBuilder, Sendable
 
 from wpilib.interfaces import MotorController
 import phoenix6
-
+ 
 
 class LemonTalonFX(phoenix6.hardware.TalonFX, MotorController):
     """Wrapper for the phoenix6 TalonFX that implements

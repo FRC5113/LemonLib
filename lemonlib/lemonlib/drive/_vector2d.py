@@ -28,3 +28,4 @@ class Vector2d:
         if mag == 0:
             return 0.0
         return self.dot(other) / mag
+ 

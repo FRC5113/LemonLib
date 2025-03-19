@@ -37,7 +37,7 @@ class LemonInput(GenericHID, Sendable):
         kRightX = 2
         kRightY = 5
         kA = 2
-        kB = 3 
+        kB = 3
         kBack = 9
         kLeftBumper = 5
         kLeftStick = 11

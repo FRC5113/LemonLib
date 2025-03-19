@@ -6,7 +6,7 @@ from wpiutil import Sendable
 from lemonlib.util import clamp
 from ._vector2d import Vector2d
 
- 
+
 class KilloughDrive(RobotDriveBase, Sendable):
     r"""A class for driving Killough drive platforms.
 

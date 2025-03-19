@@ -45,7 +45,7 @@ class MagicSysIdRoutine:
     """
 
     enabled = will_reset_to(False)
-    output_volts = will_reset_to(0) 
+    output_volts = will_reset_to(0)
 
     def __init__(self):
         self.timer = Timer()

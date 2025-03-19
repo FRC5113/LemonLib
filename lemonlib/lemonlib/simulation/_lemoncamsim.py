@@ -4,7 +4,7 @@ from photonlibpy.simulation.photonCameraSim import PhotonCameraSim
 from photonlibpy.simulation.simCameraProperties import SimCameraProperties
 from photonlibpy.simulation.visionSystemSim import VisionSystemSim
 from ..vision import LemonCamera
- 
+
 
 class LemonCameraSim(PhotonCameraSim):
     """Simulated version of a LemonCamera. This class functions exactly

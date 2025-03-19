@@ -45,7 +45,7 @@ def curve(
     return f
 
 
-def linear_curve( 
+def linear_curve(
     scalar: float = 1.0,
     offset: float = 0.0,
     deadband: float = 0.0,

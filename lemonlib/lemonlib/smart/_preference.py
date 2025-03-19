@@ -37,7 +37,7 @@ class SmartPreference(object):
         self._value = value
         self._type = type(value)
         if self._type not in (int, float, str, bool):
-            raise TypeError( 
+            raise TypeError(
                 f"SmartPreference must be int, float, str, or bool (not {self._type})"
             )
 

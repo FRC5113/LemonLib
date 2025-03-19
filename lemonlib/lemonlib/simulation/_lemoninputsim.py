@@ -2,7 +2,7 @@ from wpilib.interfaces import GenericHID
 from wpilib.simulation import GenericHIDSim
 from ..control import LemonInput
 
- 
+
 class LemonInputSim(GenericHIDSim):
     def __init__(self, port: int):
         GenericHIDSim.__init__(self, port)

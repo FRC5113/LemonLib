@@ -5,7 +5,7 @@ from wpiutil import SendableBuilder, Sendable
 
 from wpilib.interfaces import MotorController
 import phoenix6
- 
+
 
 class LemonPigeon(Pigeon2, Sendable):
     """

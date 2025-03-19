@@ -2,7 +2,7 @@ from phoenix6.hardware.talon_fx import TalonFX
 from wpilib.simulation import DCMotorSim
 from wpimath.system.plant import DCMotor, LinearSystemId
 
- 
+
 class FalconSim:
     def __init__(self, motor: TalonFX, moi: float, gearing: float):
         self.gearbox = DCMotor.falcon500(1)

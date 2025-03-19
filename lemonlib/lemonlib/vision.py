@@ -33,8 +33,11 @@ class LemonCamera(PhotonCamera):
                 return self._last_valid_tag
         return getattr(self, "_last_valid_tag", None)
 
-    def get_tag_pose(self, ID: int):
-        return self.april_tag_field.getTagPose(ID)
+    def get_tag_pose(self, ID: int,twod:bool):
+        if twod:
+            return self.april_tag_field.getTagPose(ID).toPose2d()
+        else:
+            return self.april_tag_field.getTagPose(ID)
 
     def get_best_pose(self, twod: bool = True):
         best_tag = self.get_best_tag()

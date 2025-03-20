@@ -23,10 +23,15 @@ class LemonCamera(PhotonCamera):
         self.camera_to_bot = camera_to_bot
         self.april_tag_field = april_tag_field
 
+    def update(self):
+        self.results = self.getAllUnreadResults()
+
+    def has_target(self):
+        return len(self.results) > 0 and self.results[-1].hasTargets()
+
     def get_best_tag(self) -> int:
-        results = self.getAllUnreadResults()
-        if results:
-            result = results[-1]
+        if self.results:
+            result = self.results[-1]
             best_target = result.getBestTarget()
             if best_target is not None:
                 self._last_valid_tag = best_target.getFiducialId()

@@ -19,6 +19,7 @@ class LEDController:
         self.led.setLength(length)
         self.led.setData(self.buffer)
         self.led.start()
+        self.solid_color = None
 
     def apply_pattern(self, pattern: LEDPattern):
         """Applies a wpilib.LEDPattern to the LED buffer and updates the strip."""
@@ -30,6 +31,9 @@ class LEDController:
 
     def set_solid_color(self, color: Tuple[int, int, int]):
         """Sets the entire LED strip to a solid color."""
+        if color == self.solid_color:
+            return
+        self.solid_color = color
         r, g, b = color
         for i in range(self.length):
             self.buffer[i].setRGB(r, g, b)
@@ -48,6 +52,7 @@ class LEDController:
             b = int(start_b + factor * (end_b - start_b))
             self.buffer[i].setRGB(r, g, b)
         self.led.setData(self.buffer)
+        self.solid_color = None
 
     def static_rainbow(self, offset: int = 0):
         """Custom preset that Creates a rainbow effect across the LED strip.
@@ -61,6 +66,7 @@ class LEDController:
             r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 0.5)
             self.buffer[i].setRGB(int(r * 255), int(g * 255), int(b * 255))
         self.led.setData(self.buffer)
+        self.solid_color = None
 
     def scolling_rainbow(self, speed: float = 1):
         """Custom preset that Creates a rainbow effect across the LED strip.
@@ -78,6 +84,7 @@ class LEDController:
             r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 0.5)
             self.buffer[i].setRGB(int(r * 255), int(g * 255), int(b * 255))
         self.led.setData(self.buffer)
+        self.solid_color = None
 
     def move_across(
         self, color: Tuple[int, int, int], size: int = 1, hertz: wpimath.units.hertz = 1
@@ -102,7 +109,9 @@ class LEDController:
             self.buffer[index].setRGB(r, g, b)
 
         self.led.setData(self.buffer)
+        self.solid_color = None
 
     def clear(self):
         """Turns off all LEDs."""
+        self.solid_color = None
         self.set_solid_color((0, 0, 0))

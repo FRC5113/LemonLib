@@ -1,5 +1,6 @@
 from typing import Callable
 from wpilib import DriverStation
+from magicbot import feedback
 
 
 def clamp(value: float, min_value: float, max_value: float) -> float:

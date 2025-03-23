@@ -5,6 +5,9 @@ from wpiutil import Sendable
 from lemonlib.util import Alert, AlertType
 from enum import IntEnum
 
+RIGHT_RUMBLE = GenericHID.RumbleType.kRightRumble
+LEFT_RUMBLE = GenericHID.RumbleType.kLeftRumble
+
 
 class LemonInput(GenericHID, Sendable):
     """
@@ -265,6 +268,24 @@ class LemonInput(GenericHID, Sendable):
         return self.getRawAxis(self.button_map.kLeftTrigger.value)
 
     """Both Xbox and PS5 funcs"""
+
+    def setRumbleLeft(self, value: float):
+        """
+        Sets the rumble of the controller.
+
+        Args:
+            value (float): The value of the rumble to set.
+        """
+        self.setRumble(LEFT_RUMBLE, value)
+
+    def setRumbleRight(self, value: float):
+        """
+        Sets the rumble of the controller.
+
+        Args:
+            value (float): The value of the rumble to set.
+        """
+        self.setRumble(RIGHT_RUMBLE, value)
 
     def getLeftX(self) -> float:
         """

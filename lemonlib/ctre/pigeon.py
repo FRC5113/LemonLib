@@ -10,9 +10,6 @@ from phoenix6.configs.config_groups import Slot0Configs, Slot1Configs, FeedbackC
 from phoenix6.signals.spn_enums import GravityTypeValue, SensorDirectionValue
 
 
-
-
-
 class LemonPigeon:
     "Gyro class that creates an instance of the Pigeon 2.0 Gyro"
 

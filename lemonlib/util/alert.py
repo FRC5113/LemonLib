@@ -5,7 +5,8 @@ from wpilib import SmartDashboard, Timer
 from wpiutil import Sendable, SendableBuilder
 from ntcore import NetworkTableInstance, PubSubOptions
 import json
-from .elastic import Notification,send_notification
+from .elastic import Notification, send_notification
+
 
 class AlertType(Enum):
     """
@@ -191,6 +192,3 @@ class AlertManager(Sendable):
         """
         alert = Alert(text, type, timeout)
         alert.enable()
-
-
-

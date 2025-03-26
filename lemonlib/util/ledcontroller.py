@@ -1,4 +1,4 @@
-from wpilib import AddressableLED, LEDPattern, Color, RobotController
+from wpilib import AddressableLED, LEDPattern, Color, RobotController, Timer
 import colorsys
 from typing import Tuple
 import wpimath.units
@@ -27,7 +27,7 @@ class LEDController:
         self.led.setData(self.buffer)
 
     def _write_data(self, index: int, color: Color):
-        self.buffer[index].setRGB(color.red, color.green, color.blue)
+        self.buffer[index].setLED(color)
 
     def set_solid_color(self, color: Tuple[int, int, int]):
         """Sets the entire LED strip to a solid color."""
@@ -37,6 +37,12 @@ class LEDController:
         r, g, b = color
         for i in range(self.length):
             self.buffer[i].setRGB(r, g, b)
+        self.led.setData(self.buffer)
+
+    def set_pixel(self, index: int, color: Tuple[int, int, int]):
+        """Sets the color of a single LED pixel."""
+        r, g, b = color
+        self.buffer[index].setRGB(r, g, b)
         self.led.setData(self.buffer)
 
     def set_gradient(
@@ -93,10 +99,9 @@ class LEDController:
         r, g, b = color
 
         # Get the current time
-        current_time = RobotController.getTime() / 1000000.0
+        current_time = Timer.getFPGATimestamp()
 
         # Compute the current position with slower movement
-
         position = int(current_time * hertz) % self.length
 
         # Clear buffer first

@@ -115,7 +115,7 @@ class KilloughDrive(RobotDriveBase, Sendable):
             input_vec.scalarProject(self.backVec) + zRotation,
         ]
 
-        self.normalize(wheelSpeeds)
+        KilloughDrive.normalize(wheelSpeeds)
 
         # Set motor outputs.
         self.leftMotor.set(wheelSpeeds[0] * self._m_maxOutput)

@@ -1,6 +1,5 @@
 import logging
-from commands2 import Subsystem,Command
-
+from commands2 import Subsystem, Command
 
 
 class CommandComponent(Subsystem):
@@ -34,8 +33,6 @@ class CommandComponent(Subsystem):
 
     logger: logging.Logger
 
-
-
     def setup(self) -> None:
         """
         This function is called after ``createObjects`` has been called in
@@ -51,10 +48,6 @@ class CommandComponent(Subsystem):
                   by the time this function is called.
         """
 
-
-
-
-
     def on_enable(self) -> None:
         """
         Called when the robot enters autonomous or teleoperated mode. This
@@ -65,10 +58,6 @@ class CommandComponent(Subsystem):
                   function for autonomous and teleoperated modes. This is
                   intentional, as they should be the same.
         """
-
-
-
-
 
     def on_disable(self) -> None:
         """
@@ -82,9 +71,6 @@ class CommandComponent(Subsystem):
         the component.
         """
         self.run
-
-
-
 
     def execute(self) -> None:
         """

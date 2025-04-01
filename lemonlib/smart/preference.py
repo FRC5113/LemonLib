@@ -49,22 +49,22 @@ class SmartPreference(object):
         self._key = name
         if self._low_bandwidth:
             return
-        if self._type == int or self._type == float:
+        if self._type is int or self._type is float:
             Preferences.initDouble(self._key, self._value)
-        elif self._type == str:
+        elif self._type is str:
             Preferences.initString(self._key, self._value)
-        elif self._type == bool:
+        elif self._type is bool:
             Preferences.initBoolean(self._key, self._value)
 
     def __get__(self, obj, objtype=None):
         if self._low_bandwidth:
             return self._value
         new = None
-        if self._type == int or self._type == float:
+        if self._type is int or self._type is float:
             new = Preferences.getDouble(self._key, self._value)
-        elif self._type == str:
+        elif self._type is str:
             new = Preferences.getString(self._key, self._value)
-        elif self._type == bool:
+        elif self._type is bool:
             new = Preferences.getBoolean(self._key, self._value)
         if new != self._value:
             SmartPreference._changed_flag = True
@@ -72,7 +72,7 @@ class SmartPreference(object):
         return self._value
 
     def __set__(self, obj, value):
-        if type(value) != self._type:
+        if type(value) is not self._type:
             raise TypeError(
                 f"Set value type ({type(value)} does not match original ({self._type}))"
             )
@@ -80,11 +80,11 @@ class SmartPreference(object):
         self._type = type(value)
         if self._low_bandwidth:
             return
-        if self._type == int or self._type == float:
+        if self._type is int or self._type is float:
             self._value = Preferences.setDouble(self._key, self._value)
-        elif self._type == str:
+        elif self._type is str:
             self._value = Preferences.setString(self._key, self._value)
-        elif self._type == bool:
+        elif self._type is bool:
             self._value = Preferences.setBoolean(self._key, self._value)
 
     def has_changed() -> bool:

@@ -1,6 +1,7 @@
 import magicbot
 import commands2
 
+
 class CommandMagicRobot(magicbot.MagicRobot):
     """
     Wrapper for the magicbot robot class to allow for command-based
@@ -8,12 +9,11 @@ class CommandMagicRobot(magicbot.MagicRobot):
     controlled using commands, while still using the magicbot framework.
     """
 
-    
     def _do_periodics(self):
         super()._do_periodics()
         commands2.CommandScheduler.getInstance().run()
         self.period = max(self.control_loop_wait_time, self.watchdog.getTime())
-        print (commands2.CommandScheduler.getInstance()._scheduledCommands)
+        print(commands2.CommandScheduler.getInstance()._scheduledCommands)
 
     def _enabled_periodic(self) -> None:
         """Run components and all periodic methods."""
@@ -23,7 +23,7 @@ class CommandMagicRobot(magicbot.MagicRobot):
             if commands2.CommandScheduler.getInstance()._scheduledCommands == {}:
                 try:
                     component.execute()
-                
+
                 except:
                     self.onException()
             watchdog.addEpoch(name)

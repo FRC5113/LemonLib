@@ -1,8 +1,6 @@
 from wpilib import Preferences, SmartDashboard
-from wpimath.trajectory import TrapezoidProfile
-from wpiutil import Sendable, SendableBuilder
-from wpilib import Preferences, SmartDashboard
 from wpimath.trajectory import TrapezoidProfile, TrapezoidProfileRadians
+from wpiutil import Sendable, SendableBuilder
 from wpimath.controller import (
     PIDController,
     ProfiledPIDController,
@@ -11,8 +9,9 @@ from wpimath.controller import (
     ElevatorFeedforward,
     ArmFeedforward,
 )
-from wpiutil import Sendable, SendableBuilder
 from .controller import SmartController
+from phoenix6.configs import Slot0Configs
+from phoenix6 import signals
 
 
 class SmartProfile(Sendable):
@@ -113,6 +112,46 @@ class SmartProfile(Sendable):
             controller.enableContinuousInput(
                 self.gains["kMinInput"], self.gains["kMaxInput"]
             )
+        return controller
+
+    def create_ctre_pid_controller(self) -> Slot0Configs:
+        """Creates a CTRE PIDController. Use `create_pid_controller()`
+        instead if possible.
+        """
+        controller = Slot0Configs()
+        controller.with_k_p(self.gains["kP"])
+        controller.with_k_i(self.gains["kI"])
+        controller.with_k_d(self.gains["kD"])
+        return controller
+
+    def create_ctre_turret_controller(self) -> Slot0Configs:
+        """Creates a CTRE PIDController. Use `create_pid_controller()`
+        instead if possible.
+        Requires kP, kI, kD,kS, kV,kA
+        """
+        controller = Slot0Configs()
+        controller.with_k_p(self.gains["kP"])
+        controller.with_k_i(self.gains["kI"])
+        controller.with_k_d(self.gains["kD"])
+        controller.with_k_s(self.gains["kS"])
+        controller.with_k_v(self.gains["kV"])
+        controller.with_k_a(self.gains["kA"])
+        controller.with_static_feedforward_sign(
+            signals.StaticFeedforwardSignValue.USE_CLOSED_LOOP_SIGN
+        )
+        return controller
+
+    def create_ctre_flywheel_controller(self) -> Slot0Configs:
+        """Creates a CTRE PIDController. Use `create_pid_controller()`
+        instead if possible.
+        Requires kP, kI, kD,kS, kV,kA
+        """
+        controller = Slot0Configs()
+        controller.with_k_p(self.gains["kP"])
+        controller.with_k_i(self.gains["kI"])
+        controller.with_k_d(self.gains["kD"])
+        controller.with_k_s(self.gains["kS"])
+        controller.with_k_v(self.gains["kV"])
         return controller
 
     @_requires({"kP", "kI", "kD", "kMaxV", "kMaxA"})

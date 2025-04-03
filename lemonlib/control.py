@@ -4,6 +4,7 @@ from wpilib.simulation import GenericHIDSim
 from wpiutil import Sendable
 from lemonlib.util import Alert, AlertType
 from enum import IntEnum
+import math
 
 RIGHT_RUMBLE = GenericHID.RumbleType.kRightRumble
 LEFT_RUMBLE = GenericHID.RumbleType.kLeftRumble
@@ -325,25 +326,27 @@ class LemonInput(GenericHID, Sendable):
 
     def __pov_xy(self):
         """
-        Returns the X and Y values of the POV as a tuple.
+        Returns the X and Y values of the POV as a tuple using sin and cos, 
+        or (0, 0) if the POV is not pressed (-1).
 
         Returns:
             tuple: The X and Y values of the POV as a tuple.
         """
         pov_value = self.getPOV()
-        pov_mapping = {
-            0: (1, 0),
-            45: (0.707, -0.707),
-            90: (0, -1),
-            135: (-0.707, -0.707),
-            180: (-1, 0),
-            225: (-0.707, 0.707),
-            270: (0, 1),
-            315: (0.707, 0.707),
-        }
-        return pov_mapping.get(
-            pov_value, (0, 0)
-        )  # Return (0, 0) for unmapped POV values
+
+        # If POV is -1 (not pressed), return (0, 0)
+        if pov_value == -1:
+            return (0, 0)
+
+        # Convert POV value to radians
+        radians = math.radians(pov_value)
+
+        # Calculate X and Y using sin and cos
+        x = math.cos(radians)
+        y = -math.sin(radians)  # Negative because POV values are typically flipped vertically
+
+        # Return the calculated values
+        return (x, y)
 
     def getPovX(self) -> float:
         """

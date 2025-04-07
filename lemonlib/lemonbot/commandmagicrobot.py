@@ -35,6 +35,14 @@ class LemonRobot(magicbot.MagicRobot):
         super()._do_periodics()
         commands2.CommandScheduler.getInstance().run()
         self.period = max(self.control_loop_wait_time, self.watchdog.getTime())
+
+    def enabledperiodic(self) -> None:
+        """Periodic code for when the bot is enabled should go here.
+        Runs when not enabled for trajectory display.
+
+        Users should override this method for code which will be called"""
+        self._enabled_periodic()
+        self.autonomousPeriodic()
             
 
     def _enabled_periodic(self) -> None:
@@ -49,6 +57,8 @@ class LemonRobot(magicbot.MagicRobot):
                 except Exception:
                     self.onException()
             watchdog.addEpoch(name)
+        if DriverStation.isEnabled():
+            self.enabledperiodic()
 
         self._do_periodics()
 

@@ -9,10 +9,8 @@ class LemonRobot(magicbot.MagicRobot):
     functionality. This class is used to create a robot that can be
     controlled using commands, while still using the magicbot framework.
     """
-    
-    low_bandwidth = DriverStation.isFMSAttached()
 
-    
+    low_bandwidth = DriverStation.isFMSAttached()
 
     def autonomousPeriodic(self):
         """
@@ -26,7 +24,7 @@ class LemonRobot(magicbot.MagicRobot):
         components are called.
         """
         pass
-    
+
     def autonomous(self):
         super().autonomous()
         self.autonomousPeriodic()
@@ -41,9 +39,7 @@ class LemonRobot(magicbot.MagicRobot):
         Runs when not enabled for trajectory display.
 
         Users should override this method for code which will be called"""
-        self._enabled_periodic()
-        self.autonomousPeriodic()
-            
+        pass
 
     def _enabled_periodic(self) -> None:
         """Run components and all periodic methods."""

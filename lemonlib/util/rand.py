@@ -1,6 +1,7 @@
 from typing import Callable
 from wpilib import DriverStation
 from magicbot import feedback
+from pathlib import Path
 
 
 def clamp(value: float, min_value: float, max_value: float) -> float:
@@ -10,6 +11,11 @@ def clamp(value: float, min_value: float, max_value: float) -> float:
 
 def is_red() -> bool:
     return DriverStation.getAlliance() == DriverStation.Alliance.kRed
+
+
+def get_file(path: str) -> str:
+    """Get a file from directory."""
+    return Path(__file__).parent.resolve() / f"{path}"
 
 
 def curve(

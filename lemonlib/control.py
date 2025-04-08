@@ -326,7 +326,7 @@ class LemonInput(GenericHID, Sendable):
 
     def __pov_xy(self):
         """
-        Returns the X and Y values of the POV as a tuple using sin and cos, 
+        Returns the X and Y values of the POV as a tuple using sin and cos,
         or (0, 0) if the POV is not pressed (-1).
 
         Returns:
@@ -343,7 +343,9 @@ class LemonInput(GenericHID, Sendable):
 
         # Calculate X and Y using sin and cos
         x = math.cos(radians)
-        y = -math.sin(radians)  # Negative because POV values are typically flipped vertically
+        y = -math.sin(
+            radians
+        )  # Negative because POV values are typically flipped vertically
 
         # Return the calculated values
         return (x, y)

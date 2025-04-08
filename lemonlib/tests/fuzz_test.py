@@ -14,8 +14,6 @@ if typing.TYPE_CHECKING:
     from pyfrc.test_support.controller import TestController
 
 
-
-
 def rand_bool() -> bool:
     return random.getrandbits(1) != 0
 

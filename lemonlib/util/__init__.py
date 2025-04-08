@@ -8,6 +8,7 @@ from .rand import (
     is_red,
     SnapY,
     SnapX,
+    get_file,
 )
 from .ledcontroller import LEDController
 from .sysid import MagicSysIdRoutine
@@ -26,4 +27,5 @@ __all__ = [
     "SnapX",
     "LEDController",
     "MagicSysIdRoutine",
+    "get_file",
 ]

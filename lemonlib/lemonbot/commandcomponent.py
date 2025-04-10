@@ -33,6 +33,11 @@ class LemonComponent(Subsystem):
 
     logger: logging.Logger
 
+    def __init__(self):
+        super().__init__()
+        self.register()
+    
+
     def setup(self) -> None:
         """
         This function is called after ``createObjects`` has been called in
@@ -70,10 +75,11 @@ class LemonComponent(Subsystem):
         component. The command will be passed to the ``execute`` method of
         the component.
         """
-        self.run(command)
+     
+
 
     def execute(self) -> None:
         """
         This function is called at the end of the control loop
         """
-        Command().execute()
+        pass

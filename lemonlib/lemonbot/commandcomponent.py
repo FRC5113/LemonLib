@@ -32,10 +32,6 @@ class LemonComponent(Subsystem):
     """
 
     logger: logging.Logger
-
-    def __init__(self):
-        super().__init__()
-        self.register()
     
 
     def setup(self) -> None:

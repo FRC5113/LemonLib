@@ -2,6 +2,7 @@ import magicbot
 import commands2
 from wpilib import DriverStation
 from wpilib import SmartDashboard
+from robotpy_ext.autonomous import AutonomousModeSelector
 from .commandcomponent import LemonComponent
 
 
@@ -14,6 +15,11 @@ class LemonRobot(magicbot.MagicRobot):
 
     low_bandwidth = DriverStation.isFMSAttached()
     commandscheduler = commands2.CommandScheduler.getInstance()
+    def __init__(self):
+        super().__init__()
+
+        self.loop_time = self.control_loop_wait_time
+
 
 
     def autonomousPeriodic(self):
@@ -28,6 +34,13 @@ class LemonRobot(magicbot.MagicRobot):
         components are called.
         """
         pass
+
+    # def endCompetition(self) -> None:
+    #     self.__done = True
+    #     if self._automodes:
+    #         self._automodes.endCompetition()
+
+
 
     def autonomous(self):
         super().autonomous()
@@ -73,4 +86,8 @@ class LemonRobot(magicbot.MagicRobot):
     def _do_periodics(self):
         super()._do_periodics()
         
-        self.period = max(self.control_loop_wait_time, self.watchdog.getTime())
+        self.loop_time = max(self.control_loop_wait_time, self.watchdog.getTime())
+
+    def get_period(self) -> float:
+        """Get the period of the robot loop in seconds."""
+        return self.loop_time

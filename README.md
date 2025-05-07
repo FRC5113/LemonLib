@@ -1,35 +1,14 @@
+---
+description: Brought to you by Frc5113 Combustible Lemons
+---
 
-# LemonLib
+# Welcome to Lemon Lib Document
 
+## Overview
 
-Custom library for 5113 Combutible Lemons
+LemonLib is an FRC library developed by students for all FRC teams. The goal of LemonLib is to allow all teams of any skill level to have an easier time in FRC. We try to make it as easy as possible; for example, our swerve auto follower.
 
-## Features
-* Hardware wrappers
-  * CTRE
-    * TalonFX Wpilib
-* Magicbot implementation of SysIdRoutine from commands2
-* Smart Preferences
-  * Smart Controller
-  * Smart Gain
-  * Smart Profile
-* Fully Auto Xbox and PS5 Coverter with pov Control
-* Alert System for Elastic dashboard
-* PhotonVision Wrapper with sim support
-* Curve Presets
+## Quick Links
 
 
-## Installing
 
-### Required dependencies
-#### Use the pyproject.toml or pip install robotpy[apriltag,commands2,navx,phoenix6,photonvision]
-* Robotpy
-* NavX
-* CTRE Phoenix6 
-* Photonvision
-
-### Online installation
-Coming Soon (mabye)
-
-### Offline installation
-Folder can be placed preferably in the `Top` but can be placed any where.

@@ -9,7 +9,7 @@ class CommandMagicRobot(magicbot.MagicRobot):
     functionality. This class is used to create a robot that can be
     controlled using commands, while still using the magicbot framework.
     """
-    
+
     def autonomousPeriodic(self):
         """
         Periodic code for autonomous mode should go here.
@@ -22,7 +22,6 @@ class CommandMagicRobot(magicbot.MagicRobot):
         components are called.
         """
         pass
-
 
     def _do_periodics(self):
         super()._do_periodics()

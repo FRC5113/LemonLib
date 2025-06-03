@@ -13,14 +13,14 @@ class LaserCanRoi:
     def __init__(self): ...
 
 class LaserCanTimingBudget:
-    Short: 'LaserCanTimingBudget'
-    Medium: 'LaserCanTimingBudget'
-    Long: 'LaserCanTimingBudget'
+    Short: "LaserCanTimingBudget"
+    Medium: "LaserCanTimingBudget"
+    Long: "LaserCanTimingBudget"
 
 class LaserCanRangingMode:
-    Short: 'LaserCanRangingMode'
-    Medium: 'LaserCanRangingMode'
-    Long: 'LaserCanRangingMode'
+    Short: "LaserCanRangingMode"
+    Medium: "LaserCanRangingMode"
+    Long: "LaserCanRangingMode"
 
 class MitoCANdria:
     def __init__(self): ...

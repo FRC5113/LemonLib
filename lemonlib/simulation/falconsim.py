@@ -12,6 +12,9 @@ class FalconSim:
         self.sim_state.set_supply_voltage(12.0)
         self.motor_sim = DCMotorSim(self.plant, self.gearbox)
 
+    def getSetpoint(self) -> float:
+        return self.sim_state.motor_voltage
+
     def update(self, dt: float):
         voltage = self.sim_state.motor_voltage
         self.motor_sim.setInputVoltage(voltage)

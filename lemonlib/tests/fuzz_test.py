@@ -44,18 +44,6 @@ class AllTheThings:
                 dio.setValue(rand_bool())
 
 
-class DSInputs:
-    """Fuzzer for HIDs attached to the driver station."""
-
-    def __init__(self) -> None:
-        self.primary = LemonInputSim(0)
-        self.secondary = LemonInputSim(1)
-
-    def fuzz(self) -> None:
-        fuzz_gamepad(self.primary)
-        fuzz_gamepad(self.secondary)
-
-
 def fuzz_joystick(joystick: wpilib.simulation.JoystickSim) -> None:
     """Fuzz a Logitech Extreme 3D Pro flight stick."""
     for axis in range(5):
@@ -65,7 +53,7 @@ def fuzz_joystick(joystick: wpilib.simulation.JoystickSim) -> None:
     joystick.setPOV(rand_pov())
 
 
-def fuzz_gamepad(gamepad: wpilib.simulation.XboxControllerSim) -> None:
+def fuzz_gamepad(gamepad: LemonInputSim) -> None:
     """Fuzz an XInput gamepad."""
     gamepad.setLeftX(rand_axis())
     gamepad.setLeftY(rand_axis())
@@ -76,6 +64,18 @@ def fuzz_gamepad(gamepad: wpilib.simulation.XboxControllerSim) -> None:
     for button in range(10):
         gamepad.setRawButton(button, rand_bool())
     gamepad.setPOV(rand_pov())
+
+
+class DSInputs:
+    """Fuzzer for HIDs attached to the driver station."""
+
+    def __init__(self) -> None:
+        self.primary = LemonInputSim(0)
+        self.secondary = LemonInputSim(1)
+
+    def fuzz(self) -> None:
+        fuzz_gamepad(self.primary)
+        fuzz_gamepad(self.secondary)
 
 
 def get_alliance_stations() -> list[str]:
@@ -129,7 +129,7 @@ def test_fuzz(control: TestController, station: str) -> None:
         for _ in range(20):
             things.fuzz()
             hids.fuzz()
-            control.step_timing(seconds=0.1, autonomous=False, enabled=True)
+            control.step_timing(seconds=0.2, autonomous=False, enabled=True)
 
         DriverStationSim.setAllianceStationId(hal.AllianceStationID.kUnknown)
 

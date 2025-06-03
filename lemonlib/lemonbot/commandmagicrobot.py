@@ -4,6 +4,8 @@ from wpilib import DriverStation
 from wpilib import SmartDashboard
 from robotpy_ext.autonomous import AutonomousModeSelector
 from .commandcomponent import LemonComponent
+from lemonlib.util import AlertManager, AlertType
+from lemonlib.smart import SmartNT
 
 
 class LemonRobot(magicbot.MagicRobot):
@@ -14,13 +16,14 @@ class LemonRobot(magicbot.MagicRobot):
     """
 
     low_bandwidth = DriverStation.isFMSAttached()
+
     commandscheduler = commands2.CommandScheduler.getInstance()
+
     def __init__(self):
         super().__init__()
 
         self.loop_time = self.control_loop_wait_time
-
-
+        SmartDashboard.putData("CommandScheduler", self.commandscheduler)
 
     def autonomousPeriodic(self):
         """
@@ -40,13 +43,9 @@ class LemonRobot(magicbot.MagicRobot):
     #     if self._automodes:
     #         self._automodes.endCompetition()
 
-
-
     def autonomous(self):
         super().autonomous()
         self.autonomousPeriodic()
-
-
 
     def enabledperiodic(self) -> None:
         """Periodic code for when the bot is enabled should go here.
@@ -59,9 +58,11 @@ class LemonRobot(magicbot.MagicRobot):
         """Run components and all periodic methods."""
         watchdog = self.watchdog
         self.commandscheduler.run()
-        
+
         for name, component in self._components:
-            if commands2.Subsystem.getCurrentCommand(component) is None and issubclass(component.__class__,LemonComponent):
+            if commands2.Subsystem.getCurrentCommand(component) is None and issubclass(
+                component.__class__, LemonComponent
+            ):
                 try:
                     component.execute()
 
@@ -74,9 +75,8 @@ class LemonRobot(magicbot.MagicRobot):
                 except Exception:
                     self.onException()
             watchdog.addEpoch(name)
-        SmartDashboard.putData("CommandScheduler",self.commandscheduler)
-        if DriverStation.isEnabled():
-            self.enabledperiodic()
+
+        self.enabledperiodic()
 
         self._do_periodics()
 
@@ -85,7 +85,7 @@ class LemonRobot(magicbot.MagicRobot):
 
     def _do_periodics(self):
         super()._do_periodics()
-        
+
         self.loop_time = max(self.control_loop_wait_time, self.watchdog.getTime())
 
     def get_period(self) -> float:

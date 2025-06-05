@@ -23,7 +23,6 @@ class SmartController:
             self.initSendable()
 
     def initSendable(self):
-
         self.nt.put("Reference", self.reference)
         self.nt.put("Measurement", self.measurement)
         self.nt.put("Error", self.error)

@@ -15,7 +15,6 @@ class SmartNT:
         self.verbose = verbose
         self.poll_period = poll_period
         self._running = False
-        self._thread: Optional[threading.Thread] = None
 
     def _get_entry(self, key: str) -> NetworkTableEntry:
         key = str(key)
@@ -74,22 +73,7 @@ class SmartNT:
         self._properties[key] = {"getter": getter, "setter": setter, "type": "string"}
         self._get_entry(key)
 
-    def start(self):
-        if not self._running:
-            self._running = True
-            self._thread = threading.Thread(target=self._update_loop, daemon=True)
-            self._thread.start()
-            if self.verbose:
-                print("[SmartNT] Update thread started")
-
-    def stop(self):
-        self._running = False
-        if self._thread:
-            self._thread.join()
-            if self.verbose:
-                print("[SmartNT] Update thread stopped")
-
-    def _update_loop(self):
+    def update_loop(self):
         while self._running:
             for key, funcs in self._properties.items():
                 entry = self._get_entry(key)

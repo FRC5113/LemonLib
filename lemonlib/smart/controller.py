@@ -2,31 +2,33 @@ from wpilib import SmartDashboard
 from wpiutil import Sendable, SendableBuilder
 from wpilib import SmartDashboard
 from wpiutil import Sendable, SendableBuilder
-from .nettables import SmartNT
 
 
-class SmartController:
+
+class SmartController(Sendable):
     """Used as a general wrapper for a variety of controllers that may
     optionally report values to NetworkTables. It is recommended to
     create these using a `SmartProfile`.
     """
 
     def __init__(self, key: str, calculate_method, feedback_enabled):
+        Sendable.__init__(self)
         self._calculate_method = calculate_method
         self.reference = 0
         self.measurement = 0
         self.error = 0
         self.output = 0
-        self.nt = SmartNT(f"SmartController/{key}_controller", verbose=False)
-
         if feedback_enabled:
-            self.initSendable()
+            SmartDashboard.putData(f"{key}_controller", self)
 
-    def initSendable(self):
-        self.nt.put("Reference", self.reference)
-        self.nt.put("Measurement", self.measurement)
-        self.nt.put("Error", self.error)
-        self.nt.put("Output", self.output)
+    def initSendable(self, builder: SendableBuilder):
+        builder.setSmartDashboardType("SmartController")
+        builder.addDoubleProperty("Reference", lambda: self.reference, lambda _: None)
+        builder.addDoubleProperty(
+            "Measurement", lambda: self.measurement, lambda _: None
+        )
+        builder.addDoubleProperty("Error", lambda: self.error, lambda _: None)
+        builder.addDoubleProperty("Output", lambda: self.output, lambda _: None)
 
     def calculate(self, measurement: float, reference: float):
         self.reference = reference

@@ -4,7 +4,6 @@ from wpilib import SmartDashboard
 from wpiutil import Sendable, SendableBuilder
 
 
-
 class SmartController(Sendable):
     """Used as a general wrapper for a variety of controllers that may
     optionally report values to NetworkTables. It is recommended to

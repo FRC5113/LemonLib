@@ -89,10 +89,10 @@ class SmartNT:
                 print("[SmartNT] Update thread stopped")
 
     def _update_loop(self):
-        
+
         while self._running:
             for key, funcs in self._properties.items():
-                
+
                 entry = self._get_entry(key)
                 getter = funcs["getter"]
                 setter = funcs["setter"]

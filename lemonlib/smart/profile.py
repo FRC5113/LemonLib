@@ -54,7 +54,7 @@ class SmartProfile(Sendable):
         """
         Sendable.__init__(self)
         self.profile_key = profile_key
-        self.nt = SmartNT(f"SmartProfile/{profile_key}",True)
+        self.nt = SmartNT(f"SmartProfile/{profile_key}", True)
         self.tuning_enabled = tuning_enabled
         self.gains = gains
         if tuning_enabled:
@@ -63,7 +63,7 @@ class SmartProfile(Sendable):
                 self.gains[gain] = Preferences.getDouble(
                     f"{profile_key}_{gain}", gains[gain]
                 )
-            SmartDashboard.putData(f"SmartProfile/{profile_key}",self)
+            SmartDashboard.putData(f"SmartProfile/{profile_key}", self)
 
     def initSendable(self, builder: SendableBuilder):
         builder.setSmartDashboardType("SmartController")

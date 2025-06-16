@@ -17,8 +17,17 @@ class SmartController(Sendable):
         self.measurement = 0
         self.error = 0
         self.output = 0
+        self.tolerance = 0.0
         if feedback_enabled:
             SmartDashboard.putData(f"{key}_controller", self)
+
+    def setTolerance(self, error_tolerance: float):
+        """Sets the error tolerance for the controller."""
+        self.tolerance = error_tolerance
+    
+    def at_setpoint(self) -> bool:
+        """Checks if the controller is at the setpoint within the tolerance."""
+        return abs(self.error) < self.tolerance
 
     def initSendable(self, builder: SendableBuilder):
         builder.setSmartDashboardType("SmartController")
@@ -33,5 +42,8 @@ class SmartController(Sendable):
         self.reference = reference
         self.measurement = measurement
         self.error = reference - measurement
-        self.output = self._calculate_method(measurement, reference)
+        if abs(self.error) < self.tolerance:
+            self.output = 0.0
+        else:
+            self.output = self._calculate_method(measurement, reference)
         return self.output

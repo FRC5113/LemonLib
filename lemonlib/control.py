@@ -51,6 +51,24 @@ class LemonInput(GenericHID, Sendable):
         kX = 1
         kY = 4
 
+    class legion_buttons(IntEnum):
+        kLeftTrigger = 2
+        kLeftX = 0
+        kLeftY = 1
+        kRightTrigger = 3
+        kRightX = 4
+        kRightY = 5
+        kA = 1
+        kB = 2
+        kBack = 7
+        kLeftBumper = 5
+        kLeftStick = 9
+        kRightBumper = 6
+        kRightStick = 10
+        kStart = 8
+        kX = 3
+        kY = 4
+
     def __init__(self, port: int = None, type: str = "auto"):
         """
         Initializes the control object with the specified port number and type.

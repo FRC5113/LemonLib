@@ -8,6 +8,8 @@ from .commandcomponent import LemonComponent
 from lemonlib.util import AlertManager, AlertType
 from lemonlib.smart import SmartNT
 import heapq
+from wpilib import Notifier
+from typing import Callable, List, Tuple
 
 
 class _PeriodicCallback:
@@ -39,26 +41,25 @@ class LemonRobot(magicbot.MagicRobot):
 
     def __init__(self):
         super().__init__()
-        self._periodic_callbacks = []
+        self._periodic_callbacks: List[Tuple[Callable[[], None], float]] = []
+        self._notifiers: list[Notifier] = []
         self._start_time = RobotController.getFPGATime()
 
         self.loop_time = self.control_loop_wait_time
         SmartDashboard.putData("CommandScheduler", self.commandscheduler)
 
-    def addPeriodic(self, callback, periodSeconds: float, offsetSeconds: float = 0.0):
-        """Register a callback to run periodically.
+    def add_periodic(self, callback: Callable[[], None], period: float):
+        print(f"Registering periodic: {callback.__name__}, every {period}s")
+        self._periodic_callbacks.append((callback, period))
 
-        Mimics the behavior of TimedRobot.addPeriodic().
+    def robotInit(self):
+        super().robotInit()
 
-        Args:
-            callback: Function to call.
-            periodSeconds: Interval between calls.
-            offsetSeconds: Time offset for staggered execution.
-        """
-        callback_obj = _PeriodicCallback(
-            callback, self._start_time, periodSeconds, offsetSeconds
-        )
-        heapq.heappush(self._periodic_callbacks, callback_obj)
+        for callback, period in self._periodic_callbacks:
+            notifier = Notifier(callback)
+            notifier.setName(f"Periodic-{callback.__name__}")
+            notifier.startPeriodic(period)
+            self._notifiers.append(notifier)
 
     def autonomousPeriodic(self):
         """
@@ -78,27 +79,6 @@ class LemonRobot(magicbot.MagicRobot):
     #     if self._automodes:
     #         self._automodes.endCompetition()
 
-    def robotPeriodic(self):
-        super().robotPeriodic()
-
-        now = Timer.getFPGATimestamp()
-
-        while (
-            self._periodic_callbacks and self._periodic_callbacks[0].expiration <= now
-        ):
-            callback_obj = heapq.heappop(self._periodic_callbacks)
-            try:
-                callback_obj.func()
-            except Exception as e:
-                reportError(f"Exception in periodic callback: {e}", False)
-
-            # Advance expiration to next aligned time
-            missed_intervals = int(
-                (now - callback_obj.expiration) / callback_obj.period
-            )
-            callback_obj.expiration += callback_obj.period * (1 + missed_intervals)
-            heapq.heappush(self._periodic_callbacks, callback_obj)
-
     def autonomous(self):
         super().autonomous()
         self.autonomousPeriodic()
@@ -109,6 +89,28 @@ class LemonRobot(magicbot.MagicRobot):
 
         Users should override this method for code which will be called"""
         pass
+
+    def _stop_notifiers(self):
+        for notifier in self._notifiers:
+            notifier.stop()
+        self._notifiers.clear()
+
+    def _on_mode_disable_components(self):
+        super()._on_mode_disable_components()
+        self._stop_notifiers()
+        self.commandscheduler.cancelAll()
+
+    def _on_mode_enable_components(self):
+        super()._on_mode_enable_components()
+        self._restart_periodics()
+
+    def _restart_periodics(self):
+        self._stop_notifiers()
+        for callback, period in self._periodic_callbacks:
+            notifier = Notifier(callback)
+            notifier.setName(f"Periodic-{callback.__name__}")
+            notifier.startPeriodic(period)
+            self._notifiers.append(notifier)
 
     def _enabled_periodic(self) -> None:
         """Run components and all periodic methods."""

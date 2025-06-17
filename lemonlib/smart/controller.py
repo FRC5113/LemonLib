@@ -24,7 +24,7 @@ class SmartController(Sendable):
     def setTolerance(self, error_tolerance: float):
         """Sets the error tolerance for the controller."""
         self.tolerance = error_tolerance
-    
+
     def at_setpoint(self) -> bool:
         """Checks if the controller is at the setpoint within the tolerance."""
         return abs(self.error) < self.tolerance

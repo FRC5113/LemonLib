@@ -3,6 +3,9 @@ from enum import Enum
 
 from ntcore import NetworkTableInstance, PubSubOptions
 
+from wpinet import WebServer
+
+from wpilib import getDeployDirectory
 
 class NotificationLevel(Enum):
     INFO = "INFO"
@@ -121,3 +124,11 @@ def select_tab_index(tab_index: int):
         tab_index (int) the index of the tab to select
     """
     select_tab(str(tab_index))
+
+def start_remote_layout():
+    """
+    Starts the remote layout server for the Elastic dashboard.
+    This allows the dashboard to be controlled remotely via a web interface.
+    """
+    websever = WebServer.getInstance()
+    websever.start(5800, getDeployDirectory())

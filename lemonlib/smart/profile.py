@@ -9,6 +9,7 @@ from wpimath.controller import (
     ElevatorFeedforward,
     ArmFeedforward,
     LTVDifferentialDriveController,
+    LTVUnicycleController
 )
 from wpimath.units import meters, seconds
 from wpimath.system import LinearSystem_2_2_2
@@ -205,25 +206,16 @@ class SmartProfile(Sendable):
         )
         return controller
 
-    def create_wpi_ltv_differential_drive_controller(
+    def create_ltv_unicycle_controller(
         self, plant: LinearSystem_2_2_2, trackwidth: meters, dt: seconds = 0.02
-    ) -> LTVDifferentialDriveController:
-        """Creates a wpilib LTVDifferentialDriveController.
+    ) -> LTVUnicycleController:
+        """Creates a wpilib LTVUnicyvleController.
         Requires Qelems tuple(5 elements of SupportsFloat),
         Relems tuple(2 elements of SupportsFloat)
         """
-        controller = LTVDifferentialDriveController(
-            plant,
-            trackwidth,
-            (
-                self.gains["Q1"],
-                self.gains["Q2"],
-                self.gains["Q3"],
-                self.gains["Q4"],
-                self.gains["Q5"],
-            ),
-            (self.gains["R1"], self.gains["R2"]),
+        controller = LTVUnicycleController(
             dt,
+            self.gains["kMaxV"],
         )
         return controller
 

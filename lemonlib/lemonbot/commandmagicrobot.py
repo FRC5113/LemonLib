@@ -11,23 +11,6 @@ import heapq
 from wpilib import Notifier
 from typing import Callable, List, Tuple
 
-
-class _PeriodicCallback:
-    def __init__(self, func, start_time, period, offset):
-        self.func = func
-        self.period = period
-        # Calculate aligned expiration time
-        self.expiration = (
-            start_time
-            + offset
-            + period
-            + int((RobotController.getFPGATime() - start_time) * 1e-6 / period) * period
-        )
-
-    def __lt__(self, other):
-        return self.expiration < other.expiration
-
-
 class LemonRobot(magicbot.MagicRobot):
     """
     Wrapper for the magicbot robot class to allow for command-based
@@ -43,7 +26,6 @@ class LemonRobot(magicbot.MagicRobot):
         super().__init__()
         self._periodic_callbacks: List[Tuple[Callable[[], None], float]] = []
         self._notifiers: list[Notifier] = []
-        self._start_time = RobotController.getFPGATime()
 
         self.loop_time = self.control_loop_wait_time
         SmartDashboard.putData("CommandScheduler", self.commandscheduler)
@@ -51,15 +33,6 @@ class LemonRobot(magicbot.MagicRobot):
     def add_periodic(self, callback: Callable[[], None], period: float):
         print(f"Registering periodic: {callback.__name__}, every {period}s")
         self._periodic_callbacks.append((callback, period))
-
-    def robotInit(self):
-        super().robotInit()
-
-        for callback, period in self._periodic_callbacks:
-            notifier = Notifier(callback)
-            notifier.setName(f"Periodic-{callback.__name__}")
-            notifier.startPeriodic(period)
-            self._notifiers.append(notifier)
 
     def autonomousPeriodic(self):
         """

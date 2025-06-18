@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import random
 import typing
+import time
 
 import hal
 import pytest
@@ -15,17 +16,17 @@ if typing.TYPE_CHECKING:
 
 
 def rand_bool() -> bool:
-    return random.getrandbits(1) != 0
+    return bool(random.randint(0, 1))
 
 
 def rand_axis() -> float:
     """Get a random number between -1 and 1."""
-    return random.random() * 2 - 1
+    return random.uniform(-1.0, 1.0)
 
 
 def rand_pov() -> int:
     """Pick a random POV hat value."""
-    return random.choice((-1, 0, 45, 90, 135, 180, 225, 270, 315))
+    return random.choice([-1, 0, 45, 90, 135, 180, 225, 270, 315])
 
 
 class AllTheThings:
@@ -64,7 +65,6 @@ def fuzz_gamepad(gamepad: LemonInputSim) -> None:
     for button in range(10):
         gamepad.setRawButton(button, rand_bool())
     gamepad.setPOV(rand_pov())
-
 
 class DSInputs:
     """Fuzzer for HIDs attached to the driver station."""
@@ -135,6 +135,7 @@ def test_fuzz(control: TestController, station: str) -> None:
 
 
 def test_fuzz_test(control: TestController) -> None:
+    print("test_fuzz_test")
     with control.run_robot():
         hids = DSInputs()
 
@@ -142,11 +143,12 @@ def test_fuzz_test(control: TestController) -> None:
         control.step_timing(seconds=0.5, autonomous=False, enabled=False)
 
         DriverStationSim.setTest(True)
+        control.step_timing(seconds=0.2, autonomous=False, enabled=True)
         DriverStationSim.setEnabled(True)
 
         assert control.robot_is_alive
 
-        for _ in range(20):
+        for _ in range(50):
             hids.fuzz()
             DriverStationSim.notifyNewData()
             wpilib.simulation.stepTiming(0.2)

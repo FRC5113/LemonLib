@@ -1,0 +1,42 @@
+---
+title: Install
+description: A guide to installation.
+---
+
+## Prerequisites
+In order to install _LemonLib_ you will need to have the following items on your system and in your path.
+- Python v 3.x
+- RobotPy 
+- Wpilib
+- FRC Game tools
+- Windows v 10 or later
+
+:::note
+
+{/* Chase these are stack overflow commands, test them */}
+To install python you download it and go through the install process [here](https://www.python.org/ftp/python/3.13.5/python-3.13.5-amd64.exe)
+To install RobotPy run
+
+```sh
+py -3 -m pip install robotpy
+```
+
+To install wpilib follow the instructions [here](https://docs.wpilib.org/en/stable/docs/zero-to-robot/step-2/wpilib-setup.html)
+
+To download the FRC Game Tools follow the instructions [here](https://docs.wpilib.org/en/stable/docs/zero-to-robot/step-2/frc-game-tools.html)
+:::
+
+## Adding LemonLib to your project
+It is expected that you have already created a RobotPy project and configured it optionality with a venv (virtual environment, highly recommended)
+
+:::note
+To configure and initialize a new project run the following commands
+{/*Chase, test*/}
+```sh
+py -m venv venv
+./venv/scripts/Activate.ps1
+pip install robotpy[all]
+robotpy init
+```
+:::
+To go any further you must understand in part how _LemonLib_ works, for the most part it is a collection of "Wrapper Classes", meaning it is opt in, if you wanted you could install just individual files however we recommend you install the whole project (it is not that big), and then only use what you need. To install simply download the files from [here](https://github.com/FRC5113/LemonLib/archive/refs/tags/release.zip), or check [this](https://github.com/FRC5113/LemonLib/tree/main) github for the latest version, pip installation coming soon, I promise. Once you have downloaded the zip files, simply create a directory in your RobotPy project named "lemonlib" and extract the files there. Your all ready to go!

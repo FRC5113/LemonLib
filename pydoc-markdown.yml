@@ -1,0 +1,13 @@
+loader:
+  type: python
+  search_path: [lemonlib]
+  packages: [lemonlib]
+
+processors:
+  - type: filter
+    documented_only: true
+  - type: smart
+
+renderer:
+  type: markdown-pages
+  output_directory: docs-output

@@ -11,6 +11,7 @@ import heapq
 from wpilib import Notifier
 from typing import Callable, List, Tuple
 
+
 class LemonRobot(magicbot.MagicRobot):
     """
     Wrapper for the magicbot robot class to allow for command-based

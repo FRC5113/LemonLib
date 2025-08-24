@@ -81,7 +81,7 @@ def cubic_curve(
     max_mag: float = 0.0,
     absolute_offset: bool = True,
 ) -> Callable[[float], float]:
-    return curve(lambda x: scalar * x ** 3, offset, deadband, max_mag, absolute_offset)
+    return curve(lambda x: scalar * x**3, offset, deadband, max_mag, absolute_offset)
 
 
 def SnapX(x, y) -> float:

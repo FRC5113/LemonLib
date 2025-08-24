@@ -1,5 +1,11 @@
 from .alert import Alert, AlertManager, AlertType
-from .elastic import Notification, send_notification, select_tab, start_remote_layout,NotificationLevel
+from .elastic import (
+    Notification,
+    send_notification,
+    select_tab,
+    start_remote_layout,
+    NotificationLevel,
+)
 from .ledcontroller import LEDController
 from .sysid import MagicSysIdRoutine
 
@@ -23,7 +29,7 @@ __all__ = [
     "start_remote_layout",
     "Notification",
     "NotificationLevel",
-    ]
+]
 
 from typing import Callable
 from wpilib import DriverStation
@@ -112,7 +118,7 @@ def cubic_curve(
     max_mag: float = 0.0,
     absolute_offset: bool = True,
 ) -> Callable[[float], float]:
-    return curve(lambda x: scalar * x ** 3, offset, deadband, max_mag, absolute_offset)
+    return curve(lambda x: scalar * x**3, offset, deadband, max_mag, absolute_offset)
 
 
 def SnapX(x, y) -> float:

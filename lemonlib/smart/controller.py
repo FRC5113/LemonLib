@@ -28,16 +28,19 @@ class SmartController(Sendable):
     def at_setpoint(self) -> bool:
         """Checks if the controller is at the setpoint within the tolerance."""
         return abs(self.error) < self.tolerance
-    
+
     def getError(self) -> float:
         """Returns the current error of the controller."""
         return self.error
+
     def getOutput(self) -> float:
         """Returns the current output of the controller."""
         return self.output
+
     def getReference(self) -> float:
         """Returns the current reference value of the controller."""
         return self.reference
+
     def getMeasurement(self) -> float:
         """Returns the current measurement value of the controller."""
         return self.measurement

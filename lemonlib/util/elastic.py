@@ -7,6 +7,7 @@ from wpinet import WebServer
 
 from wpilib import getDeployDirectory
 
+
 class NotificationLevel(Enum):
     INFO = "INFO"
     WARNING = "WARNING"
@@ -124,6 +125,7 @@ def select_tab_index(tab_index: int):
         tab_index (int) the index of the tab to select
     """
     select_tab(str(tab_index))
+
 
 def start_remote_layout():
     """

@@ -66,6 +66,7 @@ def fuzz_gamepad(gamepad: LemonInputSim) -> None:
         gamepad.setRawButton(button, rand_bool())
     gamepad.setPOV(rand_pov())
 
+
 class DSInputs:
     """Fuzzer for HIDs attached to the driver station."""
 

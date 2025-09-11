@@ -58,11 +58,11 @@ class Alert:
 
             # Log the alert based on its type.
             match self.type:
-                case AlertType.ERROR.value:
+                case AlertType.ERROR:
                     AlertManager.logger.error(self.text)
-                case AlertType.WARNING.value:
+                case AlertType.WARNING:
                     AlertManager.logger.warning(self.text)
-                case AlertType.INFO.value:
+                case AlertType.INFO:
                     AlertManager.logger.info(self.text)
 
             # Send notification to Elastic dashboard.

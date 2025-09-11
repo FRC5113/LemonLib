@@ -1,11 +1,4 @@
 from .alert import Alert, AlertManager, AlertType
-from .elastic import (
-    Notification,
-    send_notification,
-    select_tab,
-    start_remote_layout,
-    NotificationLevel,
-)
 from .ledcontroller import LEDController
 from .sysid import MagicSysIdRoutine
 
@@ -24,11 +17,6 @@ __all__ = [
     "LEDController",
     "MagicSysIdRoutine",
     "get_file",
-    "send_notification",
-    "select_tab",
-    "start_remote_layout",
-    "Notification",
-    "NotificationLevel",
 ]
 
 from typing import Callable

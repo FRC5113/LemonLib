@@ -8,16 +8,10 @@ from wpimath.controller import (
     SimpleMotorFeedforwardMeters,
     ElevatorFeedforward,
     ArmFeedforward,
-    LTVDifferentialDriveController,
-    LTVUnicycleController,
 )
-from wpimath.units import meters, seconds
-from wpimath.system import LinearSystem_2_2_2
 from .controller import SmartController
 from phoenix6.configs import Slot0Configs
 from phoenix6 import signals
-
-from .nettables import SmartNT
 
 
 class SmartProfile(Sendable):
@@ -44,9 +38,6 @@ class SmartProfile(Sendable):
         kMinInput: Minimum expected measurement value (used for continuous input)
         kMaxInput: Maximum expected measurement value (used for continuous input)
 
-        Q1, Q2, Q3, Q4, Q5: State weighting for LTV controllers
-        R1, R2: Input weighting for LTV controllers
-
         :param str profile_key: Prefix for associated NetworkTables keys
         :param dict[str, float] gains: Dictionary containing gain_key: value pairs
         :param bool tuning_enabled: Specify whether or not to send and retrieve
@@ -55,7 +46,6 @@ class SmartProfile(Sendable):
         """
         Sendable.__init__(self)
         self.profile_key = profile_key
-        self.nt = SmartNT(f"SmartProfile/{profile_key}", True)
         self.tuning_enabled = tuning_enabled
         self.gains = gains
         if tuning_enabled:
@@ -64,10 +54,10 @@ class SmartProfile(Sendable):
                 self.gains[gain] = Preferences.getDouble(
                     f"{profile_key}_{gain}", gains[gain]
                 )
-            SmartDashboard.putData(f"SmartProfile/{profile_key}", self)
+            SmartDashboard.putData(f"{profile_key}_profile", self)
 
     def initSendable(self, builder: SendableBuilder):
-        builder.setSmartDashboardType("SmartController")
+        builder.setSmartDashboardType("SmartProfile")
         for gain_key in self.gains:
             builder.addDoubleProperty(
                 gain_key,
@@ -203,19 +193,6 @@ class SmartProfile(Sendable):
         )
         controller.enableContinuousInput(
             self.gains["kMinInput"], self.gains["kMaxInput"]
-        )
-        return controller
-
-    def create_ltv_unicycle_controller(
-        self, plant: LinearSystem_2_2_2, trackwidth: meters, dt: seconds = 0.02
-    ) -> LTVUnicycleController:
-        """Creates a wpilib LTVUnicyvleController.
-        Requires Qelems tuple(5 elements of SupportsFloat),
-        Relems tuple(2 elements of SupportsFloat)
-        """
-        controller = LTVUnicycleController(
-            dt,
-            self.gains["kMaxV"],
         )
         return controller
 

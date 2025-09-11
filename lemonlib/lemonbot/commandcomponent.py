@@ -32,6 +32,7 @@ class LemonComponent(Subsystem):
     """
 
     logger: logging.Logger
+    
 
     def setup(self) -> None:
         """
@@ -70,6 +71,8 @@ class LemonComponent(Subsystem):
         component. The command will be passed to the ``execute`` method of
         the component.
         """
+     
+
 
     def execute(self) -> None:
         """

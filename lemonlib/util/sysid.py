@@ -92,6 +92,9 @@ class MagicSysIdRoutine:
         self.record_state(State.kNone)
         self.timer.stop()
 
+    def getName(self) -> str:
+        return __name__
+
     def execute(self):
         if self.was_enabled:
             if self.timed_out:

@@ -26,8 +26,9 @@ def extract_classes(tree):
             for child in node.body:
                 if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     method_doc = ast.get_docstring(child)
-                    if method_doc:
-                        methods.append((child.name, method_doc))
+                    if not method_doc:
+                        method_doc = "(No documentation provided)"
+                    methods.append((child.name, method_doc))
             classes.append((class_name, class_doc, methods))
     return classes
 

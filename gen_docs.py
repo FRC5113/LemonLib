@@ -137,8 +137,7 @@ export default defineConfig({{
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) != 3:
-        print("Usage: python extract_docs.py /path/to/lemonlib docs/reference")
-    else:
-        output_path = os.path.join("src", "content", "docs", "reference")
-        main(sys.argv[1], output_path)
+
+    src_directory = os.path.join("lemonlib")
+    output_path = os.path.join("src", "content", "docs", "reference")
+    main(src_directory, output_path)

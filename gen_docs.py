@@ -73,7 +73,7 @@ def generate_sidebar_groups(sidebar_groups):
         lines.append(group)
     return ",\n".join(lines)
 
-def main(src_dir, output_dir):
+def main(src_dir, output_dir, dir):
     sidebar_groups = defaultdict(list)
 
     for dirpath, _, filenames in os.walk(src_dir):
@@ -128,16 +128,17 @@ export default defineConfig({{
   ]
 }});
 """
-
-    with open("astro.config.mjs", "w", encoding="utf-8") as f:
+    astro_dir = os.path.join(dir, "astro.config.mjs")
+    with open(astro_dir, "w", encoding="utf-8") as f:
         f.write(astro_config)
 
-    print("✅ Markdown files written to:", output_dir)
-    print("✅ astro.config.mjs generated with nested sidebar")
+    print("Markdown files written to:", output_dir)
+    print("astro.config.mjs generated with nested sidebar")
 
 if __name__ == "__main__":
     import sys
 
     src_directory = os.path.join("lemonlib")
-    output_path = os.path.join("src", "content", "docs", "reference")
-    main(src_directory, output_path)
+    main_dir = os.path.join("docs")
+    output_path = os.path.join(main_dir, "src", "content", "docs", "reference")
+    main(src_directory, output_path, main_dir)

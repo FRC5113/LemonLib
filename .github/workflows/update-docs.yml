@@ -1,47 +1,38 @@
-name: Update API Docs
+name: Copy docs to LemonLib-docs Repo
 
 on:
   push:
-    branches: [main]
+    paths:
+      - 'lemonlib/**'
 
 jobs:
-  update-docs:
+  copy-lemonlib:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        python-version: ["3.13"]
     steps:
-      - name: Checkout LemonLib
-        uses: actions/checkout@v4
-
-      - name: Set up Python
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
-
-      - name: Install Pydoc-Markdown
-        run: pip install pydoc-markdown
-
-      - name: Generate API Markdown Pages
+          python-version: ${{ matrix.python-version }}
+      
+      - name: generate docs
         run: |
-          pydoc-markdown
-          python add_frontmatter.py
+          python -m pip install --upgrade pip
+          python ./gen_docs.py                               
 
-      - name: Checkout lemonlib-docs repo
-        uses: actions/checkout@v4
+      - name: Copy Lemonlib-docs
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
-          repository: FRC5113/lemonlib-docs
-          token: ${{ secrets.API_TOKEN_GITHUB  }}
-          path: lemonlib-docs
-
-      - name: Copy generated docs
-        run: |
-          mkdir -p lemonlib-docs/src/content/docs/api/
-          cp docs-output/*.md lemonlib-docs/src/content/docs/api/
-
-      - name: Commit and push updates
-        run: |
-          cd lemonlib-docs
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add src/content/docs/api/
-          git commit -m "Update API docs from LemonLib" || echo "No changes to commit"
-          git push
+          source_file: "docs/" # Folder to copy
+          destination_repo: "FRC5113/lemonlib-docs" # Target repo
+          destination_folder: "/" # Folder where to copy it
+          user_email: "FRC5113@gmail.com"
+          user_name: "CombustibleLemons5113"
+          commit_message: ${{ github.event.head_commit.message }}
+          git_server: "github.com"

@@ -10,7 +10,7 @@ RIGHT_RUMBLE = GenericHID.RumbleType.kRightRumble
 LEFT_RUMBLE = GenericHID.RumbleType.kLeftRumble
 
 
-class LemonInput(GenericHID, Sendable):
+class LemonInput(GenericHID):
     """
     LemonInput is a wrapper class for Xbox
     and PS5 controllers allowing automatic
@@ -82,7 +82,7 @@ class LemonInput(GenericHID, Sendable):
                 - "Xbox": Forces the controller type to Xbox.
                 - "PS5": Forces the controller type to PS5.
         """
-        Sendable.__init__(self)
+        # Sendable.__init__(self)
 
         if port is None:
             port = 0

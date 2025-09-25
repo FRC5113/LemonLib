@@ -162,6 +162,7 @@ class SmartProfile(Sendable):
         controller.with_k_d(self.gains["kD"])
         controller.with_k_s(self.gains["kS"])
         controller.with_k_v(self.gains["kV"])
+        controller.with_k_a(self.gains["kA"])
         return controller
 
     @_requires({"kP", "kI", "kD", "kMaxV", "kMaxA"})

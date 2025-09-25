@@ -27,7 +27,6 @@ class LemonCamera(PhotonCamera):
         self.results = self.getAllUnreadResults()
 
     def has_target(self):
-        
         return len(self.results) > 0 and self.results[-1].hasTargets()
 
     def get_best_tag(self) -> int:

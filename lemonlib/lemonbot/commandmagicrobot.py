@@ -122,7 +122,7 @@ class LemonRobot(magicbot.MagicRobot):
 
     def _do_periodics(self):
         super()._do_periodics()
-        
+
         self.loop_time = max(self.control_loop_wait_time, self.watchdog.getTime())
 
     def get_period(self) -> float:

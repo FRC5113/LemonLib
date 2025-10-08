@@ -28,7 +28,7 @@ class SmartNT:
             if self.verbose:
                 print(f"[SmartNT] Created entry: /{'/'.join(path_parts)}")
         return self._entries[key]
-    
+
     def set_struct_array(self, key: str, value: list, type):
         publisher = self.nt.getStructArrayTopic(f"{key}", type)
         publisher.publish(value)

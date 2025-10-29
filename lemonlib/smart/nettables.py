@@ -48,6 +48,7 @@ class SmartNT:
 
     def get(self, key: str, default: Any = None) -> Any:
         entry = self._get_entry(key)
+        print(f"Getting key: {key} with default: {default}")
         if isinstance(default, (float, int)):
             return entry.getDouble(default)
         elif isinstance(default, bool):

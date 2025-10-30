@@ -96,30 +96,9 @@ class LEDController:
         self, color: Tuple[int, int, int], size: int = 1, hertz: wpimath.units.hertz = 1
     ):
         """Moves a block of LEDs across the strip using RobotController.getTime() for timing."""
-        r, g, b = color
+        if isinstance(colors, tuple):
+            colors = [colors]
 
-        # Get the current time
-        current_time = Timer.getFPGATimestamp()
-
-        # Compute the current position with slower movement
-        position = int(current_time * hertz) % self.length
-
-        # Clear buffer first
-        for j in range(self.length):
-            self.buffer[j].setRGB(0, 0, 0)
-
-        # Light up the section
-        for j in range(size):
-            index = (position - j) % self.length
-            self.buffer[index].setRGB(r, g, b)
-
-        self.led.setData(self.buffer)
-        self.solid_color = None
-
-    def move_across_multi(
-        self, colors: List[Tuple[int, int, int]], size: int = 1, hertz: wpimath.units.hertz = 1
-    ):
-        """Moves a block of LEDs across the strip using RobotController.getTime() for timing."""
         # Get the current time
         current_time = Timer.getFPGATimestamp()
 
@@ -140,30 +119,37 @@ class LEDController:
                 self.buffer[index].setRGB(r,g,b)
 
         self.led.setData(self.buffer)
-        self.solid_color = None
 
-    def move_across_test(
-        self, colors: List[Tuple[int, int, int]], size: int = 1, hertz: wpimath.units.hertz = 1
+    def move_across_multi(
+        self,
+        colors: list[tuple[int, int, int]] | tuple[int, int, int],
+        size: int = 1,
+        hertz: wpimath.units.hertz = 1,
     ):
-        """Moves a block of LEDs across the strip using RobotController.getTime() for timing."""
-        # Get the current time
+        """Moves a fixed-size multicolor block across the strip using RobotController.getTime() for timing."""
         current_time = Timer.getFPGATimestamp()
 
-        # Compute the current position with slower movement
-        position = int(current_time * hertz) % self.length
+        # Handle single color input
+        if isinstance(colors[0], int):
+            colors = [colors]
 
-        # Clear buffer first
+        num_colors = len(colors)
+
+        # Current LED position (loops around)
+        position = int((current_time * hertz ) % self.length)
+
+        # Clear all LEDs first
         for j in range(self.length):
             self.buffer[j].setRGB(0, 0, 0)
 
-        num_colors = len(colors)
-        segment_len = self.length // num_colors if num_colors > 0 else self.length
-        # Light up the section
-        for i , (r,g,b) in enumerate(colors):
-            offset = ((i+1) * segment_len)//3
-            for j in range(size):
-                index = (position - j + offset) % self.length
-                self.buffer[index].setRGB(r,g,b)
+        # Fill the moving block with a color pattern distributed across its size
+        for i in range(size):
+            # Determine which color to use for this LED in the block
+            color_index = int((i / size) * num_colors) % num_colors
+            r, g, b = colors[color_index]
+
+            index = (position + i) % self.length
+            self.buffer[index].setRGB(r, g, b)
 
         self.led.setData(self.buffer)
         self.solid_color = None

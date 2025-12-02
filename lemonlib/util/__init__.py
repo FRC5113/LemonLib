@@ -8,6 +8,7 @@ from .elastic import (
 )
 from .ledcontroller import LEDController
 from .sysid import MagicSysIdRoutine
+from .onewayslew import OneWaySlewRateLimiter
 
 __all__ = [
     "Alert",
@@ -29,6 +30,7 @@ __all__ = [
     "start_remote_layout",
     "Notification",
     "NotificationLevel",
+    "OneWaySlewRateLimiter",
 ]
 
 from typing import Callable

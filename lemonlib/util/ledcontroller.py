@@ -1,6 +1,6 @@
 from wpilib import AddressableLED, LEDPattern, Color, RobotController, Timer
 import colorsys
-from typing import Tuple
+from typing import Tuple, List
 import wpimath.units
 
 
@@ -96,7 +96,8 @@ class LEDController:
         self, color: Tuple[int, int, int], size: int = 1, hertz: wpimath.units.hertz = 1
     ):
         """Moves a block of LEDs across the strip using RobotController.getTime() for timing."""
-        r, g, b = color
+        if isinstance(colors, tuple):
+            colors = [colors]
 
         # Get the current time
         current_time = Timer.getFPGATimestamp()
@@ -108,14 +109,51 @@ class LEDController:
         for j in range(self.length):
             self.buffer[j].setRGB(0, 0, 0)
 
+        num_colors = len(colors)
+        segment_len = self.length // num_colors if num_colors > 0 else self.length
         # Light up the section
-        for j in range(size):
-            index = (position - j) % self.length
+        for i , (r,g,b) in enumerate(colors):
+            offset = i * segment_len
+            for j in range(size):
+                index = (position - j + offset) % self.length
+                self.buffer[index].setRGB(r,g,b)
+
+        self.led.setData(self.buffer)
+
+    def move_across_multi(
+        self,
+        colors: list[tuple[int, int, int]] | tuple[int, int, int],
+        size: int = 1,
+        hertz: wpimath.units.hertz = 1,
+    ):
+        """Moves a fixed-size multicolor block across the strip using RobotController.getTime() for timing."""
+        current_time = Timer.getFPGATimestamp()
+
+        # Handle single color input
+        if isinstance(colors[0], int):
+            colors = [colors]
+
+        num_colors = len(colors)
+
+        # Current LED position (loops around)
+        position = int((current_time * hertz ) % self.length)
+
+        # Clear all LEDs first
+        for j in range(self.length):
+            self.buffer[j].setRGB(0, 0, 0)
+
+        # Fill the moving block with a color pattern distributed across its size
+        for i in range(size):
+            # Determine which color to use for this LED in the block
+            color_index = int((i / size) * num_colors) % num_colors
+            r, g, b = colors[color_index]
+
+            index = (position + i) % self.length
             self.buffer[index].setRGB(r, g, b)
 
         self.led.setData(self.buffer)
         self.solid_color = None
-
+    
     def clear(self):
         """Turns off all LEDs."""
         self.solid_color = None

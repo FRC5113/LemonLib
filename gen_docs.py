@@ -3,8 +3,10 @@ import os
 import re
 from collections import defaultdict
 
+
 def slugify(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
 
 def extract_docstrings_from_file(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
@@ -15,6 +17,7 @@ def extract_docstrings_from_file(filepath):
         print(f"Syntax error in {filepath}: {e}")
         return []
     return extract_classes(tree)
+
 
 def extract_classes(tree):
     classes = []
@@ -27,10 +30,11 @@ def extract_classes(tree):
                 if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     method_doc = ast.get_docstring(child)
                     if not method_doc:
-                        method_doc = "(No documentation provided)"
+                        method_doc = ""
                     methods.append((child.name, method_doc))
             classes.append((class_name, class_doc, methods))
     return classes
+
 
 def write_class_md(base_output_dir, folder, class_name, class_doc, methods):
     slug = slugify(class_name)
@@ -51,11 +55,14 @@ def write_class_md(base_output_dir, folder, class_name, class_doc, methods):
                 f.write(f"### {name}()\n\n{doc}\n\n")
     return slug, rel_slug
 
+
 def capitalize_folder(name):
     return name.capitalize()
 
+
 def js_str(s):
     return s.replace("\\", "\\\\").replace("'", "\\'")
+
 
 def generate_sidebar_groups(sidebar_groups):
     lines = []
@@ -63,7 +70,9 @@ def generate_sidebar_groups(sidebar_groups):
         label = capitalize_folder(folder)
         group_lines = []
         for item in items:
-            group_lines.append(f"{{ label: '{js_str(item['label'])}', slug: '{js_str(item['slug'])}' }}")
+            group_lines.append(
+                f"{{ label: '{js_str(item['label'])}', slug: '{js_str(item['slug'])}' }}"
+            )
         group_body = ",\n    ".join(group_lines)
         group = (
             "{\n"
@@ -73,6 +82,7 @@ def generate_sidebar_groups(sidebar_groups):
         )
         lines.append(group)
     return ",\n".join(lines)
+
 
 def main(src_dir, output_dir, dir):
     sidebar_groups = defaultdict(list)
@@ -85,56 +95,60 @@ def main(src_dir, output_dir, dir):
                 rel_folder = rel_dir.split(os.sep)[-1] if rel_dir != "." else "root"
                 classes = extract_docstrings_from_file(filepath)
                 for class_name, class_doc, methods in classes:
-                    slug, rel_slug = write_class_md(output_dir, rel_folder, class_name, class_doc, methods)
-                    sidebar_groups[rel_folder].append({
-                        "label": class_name,
-                        "slug": rel_slug
-                    })
+                    slug, rel_slug = write_class_md(
+                        output_dir, rel_folder, class_name, class_doc, methods
+                    )
+                    sidebar_groups[rel_folder].append(
+                        {"label": class_name, "slug": rel_slug}
+                    )
 
     sidebar_items = generate_sidebar_groups(sidebar_groups)
 
-    astro_config = f"""// @ts-check
-import {{ defineConfig }} from 'astro/config';
-import starlight from '@astrojs/starlight';
-import node from '@astrojs/node';
+    astro_config = (
+    f"""
+        // @ts-check
+        import {{ defineConfig }} from 'astro/config';
+        import starlight from '@astrojs/starlight';
+        import node from '@astrojs/node';
 
-export default defineConfig({{
-  output: 'server',
-  adapter: node({{
-    mode: 'standalone'
-  }}),
-  integrations: [
-    starlight({{
-      title: 'LemonLib documentation',
-      favicon: '/lemons.ico',
-      social: [
-        {{ icon: 'github', label: 'GitHub', href: 'https://github.com/FRC5113/LemonLib' }},
-        {{ icon: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/frc5113/' }}
-      ],
-      sidebar: [
-        {{
-          label: 'Guides',
-          items: [
-            {{ label: 'Install', slug: 'guides/install' }}
-          ]
-        }},
-        {{
-          label: 'Reference',
-          items: [
-{sidebar_items}
-          ]
-        }}
-      ]
-    }})
-  ]
-}});
-"""
+        export default defineConfig({{
+        output: 'server',
+        adapter: node({{
+            mode: 'standalone'
+        }}),
+        integrations: [
+            starlight({{
+            title: 'LemonLib documentation',
+            favicon: '/lemons.ico',
+            social: [
+                {{ icon: 'github', label: 'GitHub', href: 'https://github.com/FRC5113/LemonLib' }},
+                {{ icon: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/frc5113/' }}
+            ],
+            sidebar: [
+                {{
+                label: 'Guides',
+                items: [
+                    {{ label: 'Install', slug: 'guides/install' }}
+                ]
+                }},
+                {{
+                label: 'Reference',
+                items: [
+        {sidebar_items}
+                ]
+                }}
+            ]
+            }})
+        ]
+        }});
+    """)
     astro_dir = os.path.join(dir, "astro.config.mjs")
     with open(astro_dir, "w", encoding="utf-8") as f:
         f.write(astro_config)
 
     print("Markdown files written to:", output_dir)
     print("astro.config.mjs generated with nested sidebar")
+
 
 if __name__ == "__main__":
     import sys

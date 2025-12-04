@@ -1,4 +1,4 @@
-name: Copy docs to LemonLib-docs Repo
+name: Sync LemonLib docs
 
 on:
   push:
@@ -6,33 +6,79 @@ on:
       - 'lemonlib/**'
 
 jobs:
-  copy-lemonlib:
+  sync-docs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.13"]
+
     steps:
-      - name: Checkout
+      - name: Checkout LemonLib repo
         uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      
-      - name: generate docs
+
+      - name: Generate docs + astro.config.mjs
         run: |
           python -m pip install --upgrade pip
-          python ./gen_docs.py                               
+          python ./gen_docs.py
 
-      - name: Copy Lemonlib-docs
-        uses: dmnemec/copy_file_to_another_repo_action@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+
+      - name: Checkout LemonLib-docs repo
+        uses: actions/checkout@v3
         with:
-          source_file: "docs/" # Folder to copy
-          destination_repo: "FRC5113/lemonlib-docs" # Target repo
-          destination_folder: "/" # Folder where to copy it
-          user_email: "FRC5113@gmail.com"
-          user_name: "CombustibleLemons5113"
-          commit_message: ${{ github.event.head_commit.message }}
-          git_server: "github.com"
+          repository: FRC5113/lemonlib-docs
+          token: ${{ secrets.API_TOKEN_GITHUB }}
+          path: lemonlib-docs
+
+      - name: Replace docs & astro.config.mjs safely
+        run: |
+          TARGET=lemonlib-docs/src/content/docs
+          SOURCE=docs/src/content/docs
+
+          mkdir -p $TARGET
+
+          # Temporary location for protected items
+          mkdir -p keep
+
+          # Preserve index.mdx if present
+          if [ -f "$TARGET/index.mdx" ]; then
+            mv "$TARGET/index.mdx" keep/
+          fi
+
+          # Preserve guides directory if present
+          if [ -d "$TARGET/guides" ]; then
+            mv "$TARGET/guides" keep/
+          fi
+
+          # Wipe everything inside src/content/docs
+          rm -rf $TARGET
+          mkdir -p $TARGET
+
+          # Restore index.mdx
+          if [ -f keep/index.mdx ]; then
+            mv keep/index.mdx $TARGET/
+          fi
+
+          # Restore guides folder
+          if [ -d keep/guides ]; then
+            mv keep/guides $TARGET/
+          fi
+
+          # Copy in all newly generated docs
+          cp -r $SOURCE/* $TARGET/
+
+          # Update astro.config.mjs in repo root
+          cp docs/astro.config.mjs lemonlib-docs/astro.config.mjs
+
+      - name: Commit and push changes
+        run: |
+          cd lemonlib-docs
+          git config user.email "FRC5113@gmail.com"
+          git config user.name "CombustibleLemons5113"
+          git add -A
+          git commit -m "Sync docs + config from LemonLib: ${GITHUB_SHA}" || echo "No changes to commit"
+          git push

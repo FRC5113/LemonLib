@@ -112,11 +112,11 @@ class LEDController:
         num_colors = len(colors)
         segment_len = self.length // num_colors if num_colors > 0 else self.length
         # Light up the section
-        for i , (r,g,b) in enumerate(colors):
+        for i, (r, g, b) in enumerate(colors):
             offset = i * segment_len
             for j in range(size):
                 index = (position - j + offset) % self.length
-                self.buffer[index].setRGB(r,g,b)
+                self.buffer[index].setRGB(r, g, b)
 
         self.led.setData(self.buffer)
 
@@ -136,7 +136,7 @@ class LEDController:
         num_colors = len(colors)
 
         # Current LED position (loops around)
-        position = int((current_time * hertz ) % self.length)
+        position = int((current_time * hertz) % self.length)
 
         # Clear all LEDs first
         for j in range(self.length):
@@ -153,7 +153,7 @@ class LEDController:
 
         self.led.setData(self.buffer)
         self.solid_color = None
-    
+
     def clear(self):
         """Turns off all LEDs."""
         self.solid_color = None

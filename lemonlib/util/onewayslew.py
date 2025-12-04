@@ -1,6 +1,7 @@
 from typing import overload
 from wpilib import RobotController
 
+
 class OneWaySlewRateLimiter:
     """
     A one-direction slew-rate limiter that only limits the rate of decrease.
@@ -16,7 +17,6 @@ class OneWaySlewRateLimiter:
     """
 
     __slots__ = ("fallRate", "prev")
-
 
     def __init__(self, rateLimit: float) -> None:
         """
@@ -47,8 +47,8 @@ class OneWaySlewRateLimiter:
             self.prev = input
             return input
 
-        max_neg_delta = self.fallRate * time 
-        candidate = prev + max_neg_delta    
+        max_neg_delta = self.fallRate * time
+        candidate = prev + max_neg_delta
 
         if candidate > input:
             self.prev = candidate

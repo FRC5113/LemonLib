@@ -4,6 +4,7 @@ from typing import Tuple, List
 import wpimath.units
 
 
+
 class LEDController:
     def __init__(self, pwm_port: int, length: int):
         """
@@ -18,7 +19,7 @@ class LEDController:
         self.buffer = [AddressableLED.LEDData(0, 0, 0) for _ in range(length)]
         self.led.setLength(length)
         self.led.setData(self.buffer)
-        self.led.start()
+        self.led.setStart(0)
         self.solid_color = None
 
     def apply_pattern(self, pattern: LEDPattern):
@@ -96,8 +97,8 @@ class LEDController:
         self, color: Tuple[int, int, int], size: int = 1, hertz: wpimath.units.hertz = 1
     ):
         """Moves a block of LEDs across the strip using RobotController.getTime() for timing."""
-        if isinstance(colors, tuple):
-            colors = [colors]
+        if isinstance(color, tuple):
+            colors = [color]
 
         # Get the current time
         current_time = Timer.getFPGATimestamp()

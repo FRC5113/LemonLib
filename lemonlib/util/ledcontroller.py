@@ -6,7 +6,7 @@ import wpimath.units
 
 
 class LEDController:
-    def __init__(self, pwm_port: int, length: int):
+    def __init__(self, pwm_port: int, length: int, start_index: int = 0):
         """
         Initializes the LED controller.
 
@@ -19,7 +19,7 @@ class LEDController:
         self.buffer = [AddressableLED.LEDData(0, 0, 0) for _ in range(length)]
         self.led.setLength(length)
         self.led.setData(self.buffer)
-        self.led.setStart(0)
+        self.led.setStart(start_index)
         self.solid_color = None
 
     def apply_pattern(self, pattern: LEDPattern):

@@ -1,5 +1,4 @@
-import numpy as np
-
+from wpilib import RobotController
 
 class AsymmetricSlewLimiter:
     """
@@ -16,6 +15,12 @@ class AsymmetricSlewLimiter:
         self.rising_rate = abs(rising_rate)
         self.falling_rate = abs(falling_rate)
         self.prev_value = initial_value
+        self.prev_time = RobotController.getTime() / 1000000
+    
+    def get_time_seconds(self):
+        """Get the time in seconds"""
+        return RobotController.getTime() / 1000000
+
 
     def calculate(self, input_signal):
         """
@@ -27,32 +32,17 @@ class AsymmetricSlewLimiter:
         Returns:
             Rate-limited output signal
         """
-        # Handle scalar input
-        if np.isscalar(input_signal):
-            diff = input_signal - self.prev_value
-            if diff > 0:
-                change = min(diff, self.rising_rate)
-            else:
-                change = max(diff, -self.falling_rate)
-            self.prev_value += change
-            return self.prev_value
+        current_time = self.get_time_seconds()
+        time_diff = current_time - self.prev_time
+        diff = input_signal - self.prev_value
+        if diff > 0:
+            change = min(diff, self.rising_rate * time_diff)
+        else:
+            change = max(diff, -self.falling_rate * time_diff)
+        self.prev_value += change
+        self.prev_time = current_time
+        return self.prev_value
 
-        # Vectorized processing for arrays (much faster)
-        input_signal = np.asarray(input_signal)
-        output = np.empty_like(input_signal)
-
-        prev = self.prev_value
-        for i, inp in enumerate(input_signal):
-            diff = inp - prev
-            if diff > 0:
-                change = min(diff, self.rising_rate)
-            else:
-                change = max(diff, -self.falling_rate)
-            prev += change
-            output[i] = prev
-
-        self.prev_value = prev
-        return output
 
     def lastValue(self):
         """Get the last output value of the limiter."""

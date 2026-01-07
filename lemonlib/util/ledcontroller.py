@@ -4,7 +4,6 @@ from typing import Tuple, List
 import wpimath.units
 
 
-
 class LEDController:
     def __init__(self, pwm_port: int, length: int, start_index: int = 0):
         """

@@ -16,11 +16,11 @@ class AsymmetricSlewLimiter:
         self.rising_rate = abs(rising_rate)
         self.falling_rate = abs(falling_rate)
         self.prev_value = initial_value
-        self.prev_time = RobotController.getTime() / 1e6
+        self.prev_time = RobotController.getTime() / 1000000
 
     def get_time_seconds(self):
         """Get the time in seconds"""
-        return RobotController.getTime() / 1e6
+        return RobotController.getTime() / 1000000
 
     def calculate(self, input_signal):
         """
@@ -40,6 +40,7 @@ class AsymmetricSlewLimiter:
         else:
             change = max(diff, -self.falling_rate * time_diff)
         self.prev_value += change
+        self.prev_time = current_time
         return self.prev_value
 
     def lastValue(self):

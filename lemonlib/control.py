@@ -105,7 +105,7 @@ class LemonInput(GenericHID):
                 self.button_map = self.xbox_buttons
                 self.contype = "Xbox"
 
-            elif DriverStation.getJoystickIsGamepad(port):
+            elif DriverStation.getJoystickIsXbox(port):
                 self.button_map = self.xbox_buttons
                 self.contype = "Xbox"
 

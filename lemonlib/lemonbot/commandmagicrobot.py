@@ -1,13 +1,5 @@
 import magicbot
-import commands2
 from wpilib import DriverStation
-from wpilib import RobotController, Timer, reportError
-from wpilib import SmartDashboard
-from robotpy_ext.autonomous import AutonomousModeSelector
-from .commandcomponent import LemonComponent
-from lemonlib.util import AlertManager, AlertType
-from lemonlib.smart import SmartNT
-import heapq
 from wpilib import Notifier
 from typing import Callable, List, Tuple
 
@@ -21,15 +13,12 @@ class LemonRobot(magicbot.MagicRobot):
 
     low_bandwidth = DriverStation.isFMSAttached()
 
-    commandscheduler = commands2.CommandScheduler.getInstance()
-
     def __init__(self):
         super().__init__()
         self._periodic_callbacks: List[Tuple[Callable[[], None], float]] = []
         self._notifiers: list[Notifier] = []
 
         self.loop_time = self.control_loop_wait_time
-        SmartDashboard.putData("CommandScheduler", self.commandscheduler)
         print("LemonRobot initialized")
 
     def add_periodic(self, callback: Callable[[], None], period: float):
@@ -73,7 +62,6 @@ class LemonRobot(magicbot.MagicRobot):
     def _on_mode_disable_components(self):
         super()._on_mode_disable_components()
         self._stop_notifiers()
-        self.commandscheduler.cancelAll()
 
     def _on_mode_enable_components(self):
         super()._on_mode_enable_components()
@@ -94,23 +82,13 @@ class LemonRobot(magicbot.MagicRobot):
     def _enabled_periodic(self) -> None:
         """Run components and all periodic methods."""
         watchdog = self.watchdog
-        self.commandscheduler.run()
 
         for name, component in self._components:
-            if commands2.Subsystem.getCurrentCommand(component) is None and issubclass(
-                component.__class__, LemonComponent
-            ):
-                try:
-                    component.execute()
+            try:
+                component.execute()
 
-                except Exception:
-                    self.onException()
-            else:
-                try:
-                    component.execute()
-
-                except Exception:
-                    self.onException()
+            except Exception:
+                self.onException()
             watchdog.addEpoch(name)
 
         self.enabledperiodic()

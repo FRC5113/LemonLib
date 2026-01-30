@@ -129,9 +129,9 @@ class SmartProfile(Sendable):
         instead if possible.
         """
         controller = Slot0Configs()
-        controller.with_k_p(self.gains["kP"])
-        controller.with_k_i(self.gains["kI"])
-        controller.with_k_d(self.gains["kD"])
+        controller.k_p = self.gains["kP"]
+        controller.k_i = self.gains["kI"]
+        controller.k_d = self.gains["kD"]
         return controller
 
     def create_ctre_turret_controller(self) -> Slot0Configs:
@@ -140,10 +140,11 @@ class SmartProfile(Sendable):
         Requires kP, kI, kD,kS
         """
         controller = Slot0Configs()
-        controller.with_k_p(self.gains["kP"])
-        controller.with_k_i(self.gains["kI"])
-        controller.with_k_d(self.gains["kD"])
-        controller.with_k_s(self.gains["kS"])
+        controller.k_p = self.gains["kP"]
+        controller.k_i = self.gains["kI"]
+        controller.k_d = self.gains["kD"]
+        controller.k_s = self.gains["kS"]
+        controller.k_v = self.gains["kV"]
         controller.with_static_feedforward_sign(
             signals.StaticFeedforwardSignValue.USE_CLOSED_LOOP_SIGN
         )
@@ -155,12 +156,12 @@ class SmartProfile(Sendable):
         Requires kP, kI, kD,kS, kV,kA
         """
         controller = Slot0Configs()
-        controller.with_k_p(self.gains["kP"])
-        controller.with_k_i(self.gains["kI"])
-        controller.with_k_d(self.gains["kD"])
-        controller.with_k_s(self.gains["kS"])
-        controller.with_k_v(self.gains["kV"])
-        controller.with_k_a(self.gains["kA"])
+        controller.k_p = self.gains["kP"]
+        controller.k_i = self.gains["kI"]
+        controller.k_d = self.gains["kD"]
+        controller.k_s = self.gains["kS"]
+        controller.k_v = self.gains["kV"]
+        controller.k_a = self.gains["kA"] if "kA" in self.gains else 0
         controller.with_static_feedforward_sign(
             signals.StaticFeedforwardSignValue.USE_VELOCITY_SIGN
         )

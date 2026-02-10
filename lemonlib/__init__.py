@@ -6,6 +6,7 @@ from .lemonbot.commandcomponent import LemonComponent
 from .lemonbot.commandmagicrobot import LemonRobot
 from .lemonbot.tunable import fms_feedback
 
+
 __all__ = [
     "LemonInput",
     "LemonCamera",

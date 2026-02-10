@@ -1,8 +1,7 @@
 import functools
-import inspect
-from magicbot import MagicRobot, tunable, feedback
+from typing import Callable, Optional
+
 from wpilib import DriverStation
-from typing import Optional, Callable
 
 
 def fms_feedback(f=None, *, key: Optional[str] = None) -> Callable:

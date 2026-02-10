@@ -1,11 +1,8 @@
 import math
-from typing import Any
-from dataclasses import dataclass
-from ..util import clamp
+
 from wpilib.interfaces import MotorController
-from wpiutil import Sendable, SendableBuilder
-from wpilib.drive import RobotDriveBase
 from wpimath.geometry import Pose2d
+from wpiutil import SendableBuilder
 
 __all__ = ["KilloughDrive"]
 

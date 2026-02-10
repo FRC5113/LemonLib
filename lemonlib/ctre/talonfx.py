@@ -1,10 +1,5 @@
-from phoenix6.hardware import Pigeon2
-from wpimath.geometry import Rotation2d, Rotation3d
-from wpilib import SmartDashboard
-from wpiutil import SendableBuilder, Sendable
-
-from wpilib.interfaces import MotorController
 import phoenix6
+from wpilib.interfaces import MotorController
 
 
 class LemonTalonFX(phoenix6.hardware.TalonFX, MotorController):

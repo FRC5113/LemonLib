@@ -1,7 +1,7 @@
-import magicbot
-from wpilib import DriverStation
-from wpilib import Notifier
 from typing import Callable, List, Tuple
+
+import magicbot
+from wpilib import DriverStation, Notifier
 
 
 class LemonRobot(magicbot.MagicRobot):

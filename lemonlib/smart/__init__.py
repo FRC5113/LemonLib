@@ -1,6 +1,6 @@
 from .controller import SmartController
+from .nettables import SmartNT
 from .preference import SmartPreference
 from .profile import SmartProfile
-from .nettables import SmartNT
 
 __all__ = ["SmartController", "SmartPreference", "SmartProfile", "SmartNT"]

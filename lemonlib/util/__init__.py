@@ -1,14 +1,14 @@
 from .alert import Alert, AlertManager, AlertType
 from .elastic import (
     Notification,
-    send_notification,
-    select_tab,
-    start_remote_layout,
     NotificationLevel,
+    select_tab,
+    send_notification,
+    start_remote_layout,
 )
 from .ledcontroller import LEDController
-from .sysid import MagicSysIdRoutine
 from .slew import AsymmetricSlewLimiter
+from .sysid import MagicSysIdRoutine
 
 __all__ = [
     "Alert",
@@ -33,11 +33,12 @@ __all__ = [
     "AsymmetricSlewLimiter",
 ]
 
-from typing import Callable
-from wpilib import DriverStation
-from magicbot import feedback
-from pathlib import Path
 import inspect
+from pathlib import Path
+from typing import Callable
+
+from magicbot import feedback
+from wpilib import DriverStation
 
 
 def clamp(value: float, min_value: float, max_value: float) -> float:

@@ -1,10 +1,10 @@
 from enum import Enum
 from logging import Logger
-from typing import List, Dict
+from typing import List
+
 from wpilib import SmartDashboard, Timer
 from wpiutil import Sendable, SendableBuilder
-from ntcore import NetworkTableInstance, PubSubOptions
-import json
+
 from .elastic import Notification, send_notification
 
 

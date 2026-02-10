@@ -1,7 +1,6 @@
+from .lemoncamsim import LemonCameraSim
 from .lemoninputsim import LemonInputSim
 from .talonfxsim import FalconSim, FalconSimFOC, KrakenSim, KrakenSimFOC
-
-from .lemoncamsim import LemonCameraSim
 
 __all__ = [
     "KilloughDriveSim",

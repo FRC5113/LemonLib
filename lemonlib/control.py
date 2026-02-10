@@ -1,10 +1,8 @@
+import math
+from enum import IntEnum
+
 from wpilib import DriverStation, RobotBase
 from wpilib.interfaces import GenericHID
-from wpilib.simulation import GenericHIDSim
-from wpiutil import Sendable
-from lemonlib.util import Alert, AlertType
-from enum import IntEnum
-import math
 
 RIGHT_RUMBLE = GenericHID.RumbleType.kRightRumble
 LEFT_RUMBLE = GenericHID.RumbleType.kLeftRumble

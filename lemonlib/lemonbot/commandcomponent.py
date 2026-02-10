@@ -1,5 +1,6 @@
 import logging
-from commands2 import Subsystem, Command
+
+from commands2 import Command, Subsystem
 
 
 class LemonComponent(Subsystem):

@@ -1,8 +1,6 @@
 from photonlibpy.photonCamera import PhotonCamera
-from robotpy_apriltag import AprilTagFieldLayout, AprilTagField, AprilTagPoseEstimator
-from wpimath.geometry import Pose2d, Pose3d, Transform3d
-from wpimath import units
-import math
+from robotpy_apriltag import AprilTagFieldLayout
+from wpimath.geometry import Transform3d
 
 
 class LemonCamera(PhotonCamera):

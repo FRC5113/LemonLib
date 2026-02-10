@@ -1,7 +1,8 @@
 import threading
 import time
-from typing import Any, Callable, Dict, Optional
-from ntcore import NetworkTableInstance, NetworkTableEntry
+from typing import Any, Callable, Dict
+
+from ntcore import NetworkTableEntry, NetworkTableInstance
 
 
 class SmartNT:
@@ -96,7 +97,6 @@ class SmartNT:
 
         while self._running:
             for key, funcs in self._properties.items():
-
                 entry = self._get_entry(key)
                 getter = funcs["getter"]
                 setter = funcs["setter"]

@@ -84,9 +84,9 @@ class SmartProfile(Sendable):
         def inner(func):
             def wrapper(self, key, feedback_enabled=None):
                 missing_reqs = requirements - set(self.gains.keys())
-                assert len(missing_reqs) == 0, (
-                    f"Requires gains: {', '.join(missing_reqs)}"
-                )
+                assert (
+                    len(missing_reqs) == 0
+                ), f"Requires gains: {', '.join(missing_reqs)}"
                 return func(self, key, feedback_enabled)
 
             return wrapper

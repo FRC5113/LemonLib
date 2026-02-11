@@ -12,4 +12,5 @@ def tryUntilOk(attempts: int, command: Callable[[], StatusCode]):
     for _ in range(attempts):
         code = command()
         if code.is_ok():
+            print("Command succeeded")
             break

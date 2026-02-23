@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Callable, Generic, List, Optional, Tuple, TypeVar
 
-from wpilib import DriverStation, SmartDashboard
+#from wpilib import DriverStation, SmartDashboard
 from wpimath.controller import (
     ArmFeedforward,
     ElevatorFeedforward,
@@ -20,6 +20,9 @@ from wpimath.system.plant import DCMotor
 from wpimath.trajectory import TrapezoidProfile
 from wpimath.units import rotationsToRadians
 import ntcore
+
+from .motorcontrollerconfig import *
+from lemonlib.util.notifier import Notifier
 
 # Telemetry stubs
 
@@ -77,6 +80,38 @@ class SmartMotorController(ABC):
       - Temperature: C
       - Time: s
     """
+
+    def __init__(self) -> None:
+        self.telemetry: SmartMotorControllerTelemetry = SmartMotorControllerTelemetry()
+        self.config: SmartMotorControllerConfig = SmartMotorControllerConfig()
+
+        # Motion profiles
+        self.trapezoid_profile: Optional[TrapezoidProfile] = None
+        self.trap_state: Optional[TrapezoidProfile.State] = None
+
+        # Controllers
+        self.pid: Optional[PIDController] = None
+        # self.lqr: Optional[LQRController] = None
+
+        # Setpoints (rotations / rotations-per-second)
+        self.setpoint_position: Optional[float] = None   # rotations
+        self.setpoint_velocity: Optional[float] = None   # rotations/second
+
+        # Notifier thread
+        self.closed_loop_controller_thread: Optional[Notifier] = None
+        self._closed_loop_controller_running: bool = False
+
+        # NetworkTables
+        self.parent_table = None
+        self.telemetry_table = None
+        self.tuning_table = None
+        self.telemetry_config = None
+
+        # Simulation
+        self.sim_supplier: Optional[SimSupplier] = None
+
+        # Loose followers
+        self.loose_followers: Optional[List["SmartMotorController"]] = None
 
     # Factory
 
@@ -737,170 +772,3 @@ class SmartMotorController(ABC):
     def __repr__(self) -> str:
         return f"SmartMotorController(name={self.get_name()!r})"
 
-@dataclass
-class SmartMotorControllerConfig:
-    """Minimal config stub — expand with real fields from your config class."""
-
-    class ControlMode:
-        OPEN_LOOP = "OPEN_LOOP"
-        CLOSED_LOOP = "CLOSED_LOOP"
-
-    class MotorMode:
-        COAST = "COAST"
-        BRAKE = "BRAKE"
-
-    class TelemetryVerbosity:
-        HIGH = "HIGH"
-        LOW = "LOW"
-
-    _telemetry_name: Optional[str] = None
-    _control_mode: str = "OPEN_LOOP"
-    _linear_use: bool = False
-    _velocity_trap_in_use: bool = False
-    _closed_loop_period_s: float = 0.020
-    _stator_limit: Optional[int] = None
-    _mech_lower_limit_rot: Optional[float] = None
-    _mech_upper_limit_rot: Optional[float] = None
-    _arm_ff: Optional[ArmFeedforward] = None
-    _elev_ff: Optional[ElevatorFeedforward] = None
-    _simple_ff: Optional[SimpleMotorFeedforwardMeters] = None
-    _temp_cutoff_c: Optional[float] = None
-    _max_voltage: Optional[float] = None
-    _verbosity: Optional[str] = None
-    _subsystem: object = None
-    _telemetry_config: object = None
-
-    def getTelemetryName(self) -> Optional[str]:
-        return self._telemetry_name
-
-    def getMotorControllerMode(self) -> str:
-        return self._control_mode
-
-    def getLinearClosedLoopControllerUse(self) -> bool:
-        return self._linear_use
-
-    def getVelocityTrapezoidalProfileInUse(self) -> bool:
-        return self._velocity_trap_in_use
-
-    def getClosedLoopControlPeriod(self) -> Optional[float]:
-        """Returns period in seconds, or None."""
-        return self._closed_loop_period_s
-
-    def getStatorStallCurrentLimit(self) -> Optional[int]:
-        return self._stator_limit
-
-    def getMechanismLowerLimit(self) -> Optional[float]:
-        """Rotations."""
-        return self._mech_lower_limit_rot
-
-    def getMechanismUpperLimit(self) -> Optional[float]:
-        """Rotations."""
-        return self._mech_upper_limit_rot
-
-    def getArmFeedforward(self) -> Optional[ArmFeedforward]:
-        return self._arm_ff
-
-    def getElevatorFeedforward(self) -> Optional[ElevatorFeedforward]:
-        return self._elev_ff
-
-    def getSimpleFeedforwardMeters(self) -> Optional[SimpleMotorFeedforwardMeters]:
-        return self._simple_ff
-
-    def getTemperatureCutoff(self) -> Optional[float]:
-        """Celsius."""
-        return self._temp_cutoff_c
-
-    def getClosedLoopControllerMaximumVoltage(self) -> Optional[float]:
-        """Volts."""
-        return self._max_voltage
-
-    def getVerbosity(self) -> Optional[str]:
-        return self._verbosity
-
-    def getSubsystem(self):
-        return self._subsystem
-
-    def getSmartControllerTelemetryConfig(self):
-        return self._telemetry_config
-
-    def convertFromMechanism(self, value_rot_or_rps: float) -> float:
-        """
-        Convert a mechanism value (rotations or RPS) to the measurement unit (meters or m/s).
-        Stub — implement with your gearing/circumference math.
-        """
-        return value_rot_or_rps
-
-class SmartMotorControllerConfigurationException(Exception):
-    def __init__(self, message: str, context: str, fix: str):
-        super().__init__(f"{message} | Context: {context} | Fix: {fix}")
-
-def __init__(self) -> None:
-    self.telemetry: SmartMotorControllerTelemetry = SmartMotorControllerTelemetry()
-    self.config: SmartMotorControllerConfig = SmartMotorControllerConfig()
-
-    # Motion profiles
-    self.trapezoid_profile: Optional[TrapezoidProfile] = None
-    self.trap_state: Optional[TrapezoidProfile.State] = None
-
-    # Controllers
-    self.pid: Optional[PIDController] = None
-    # self.lqr: Optional[LQRController] = None
-
-    # Setpoints (rotations / rotations-per-second)
-    self.setpoint_position: Optional[float] = None   # rotations
-    self.setpoint_velocity: Optional[float] = None   # rotations/second
-
-    # Notifier thread
-    self.closed_loop_controller_thread: Optional[Notifier] = None
-    self._closed_loop_controller_running: bool = False
-
-    # NetworkTables
-    self.parent_table = None
-    self.telemetry_table = None
-    self.tuning_table = None
-    self.telemetry_config = None
-
-    # Simulation
-    self.sim_supplier: Optional[SimSupplier] = None
-
-    # Loose followers
-    self.loose_followers: Optional[List["SmartMotorController"]] = None
-
-class Notifier:
-    """Periodically calls a callback on a background daemon thread. (replaces edu.wpi.first.wpilibj.Notifier)"""
-
-    def __init__(self, callback: Callable[[], None]):
-        self._callback = callback
-        self._timer: Optional[threading.Timer] = None
-        self._lock = threading.Lock()
-        self._running = False
-        self._period_s: float = 0.020
-
-    def startPeriodic(self, period_s: float) -> None:
-        self._period_s = period_s
-        self._running = True
-        self._schedule()
-
-    def _schedule(self) -> None:
-        if not self._running:
-            return
-        self._timer = threading.Timer(self._period_s, self._run)
-        self._timer.daemon = True
-        self._timer.start()
-
-    def _run(self) -> None:
-        if not self._running:
-            return
-        try:
-            self._callback()
-        finally:
-            self._schedule()
-
-    def stop(self) -> None:
-        self._running = False
-        if self._timer is not None:
-            self._timer.cancel()
-            self._timer = None
-
-    def close(self) -> None:
-        self.stop()

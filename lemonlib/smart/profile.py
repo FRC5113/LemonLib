@@ -1,5 +1,5 @@
 from phoenix6 import signals
-from phoenix6.configs import Slot0Configs,MotionMagicConfigs
+from phoenix6.configs import MotionMagicConfigs, Slot0Configs
 from wpilib import Preferences, SmartDashboard
 from wpimath.controller import (
     ArmFeedforward,
@@ -84,9 +84,9 @@ class SmartProfile(Sendable):
         def inner(func):
             def wrapper(self, key, feedback_enabled=None):
                 missing_reqs = requirements - set(self.gains.keys())
-                assert (
-                    len(missing_reqs) == 0
-                ), f"Requires gains: {', '.join(missing_reqs)}"
+                assert len(missing_reqs) == 0, (
+                    f"Requires gains: {', '.join(missing_reqs)}"
+                )
                 return func(self, key, feedback_enabled)
 
             return wrapper
@@ -144,15 +144,17 @@ class SmartProfile(Sendable):
         controller.k_d = self.gains["kD"]
         controller.k_s = self.gains["kS"]
         controller.k_v = self.gains["kV"]
-        controller.k_a = self.gains["kA"] if "kA" in self.gains else 0,
+        controller.k_a = self.gains["kA"] if "kA" in self.gains else 0
         controller.static_feedforward_sign = (
             signals.StaticFeedforwardSignValue.USE_CLOSED_LOOP_SIGN
         )
         motion_magic_configs = MotionMagicConfigs()
-        motion_magic_configs.motion_magic_cruise_velocity = 0 # Unlimited cruise velocity
+        motion_magic_configs.motion_magic_cruise_velocity = (
+            0  # Unlimited cruise velocity
+        )
         motion_magic_configs.motion_magic_expo_k_v = self.gains["kMaxV"]
         motion_magic_configs.motion_magic_expo_k_a = self.gains["kMaxA"]
-        
+
         return (controller, motion_magic_configs)
 
     def create_ctre_flywheel_controller(self) -> Slot0Configs:

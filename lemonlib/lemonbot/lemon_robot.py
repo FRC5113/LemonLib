@@ -88,9 +88,6 @@ class LemonRobot(magicbot.MagicRobot):
         self._do_periodics()
         watchdog.addEpoch("periodics")
 
-        for reset_dict, component in self._reset_components:
-            component.__dict__.update(reset_dict)
-
     def _do_periodics(self):
         super()._do_periodics()
 

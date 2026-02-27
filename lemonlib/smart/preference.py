@@ -1,4 +1,4 @@
-from wpilib import Preferences
+from wpilib import Preferences, RobotController
 
 
 class SmartPreference(object):
@@ -32,10 +32,12 @@ class SmartPreference(object):
     """
 
     _changed_flag = False
+    _CACHE_PERIOD = 250_000  # microseconds between NT reads
 
     def __init__(self, value) -> None:
         self._value = value
         self._type = type(value)
+        self._last_nt_read = 0.0
         if self._type not in (int, float, str, bool):
             raise TypeError(
                 f"SmartPreference must be int, float, str, or bool (not {self._type})"
@@ -59,6 +61,11 @@ class SmartPreference(object):
     def __get__(self, obj, objtype=None):
         if self._low_bandwidth:
             return self._value
+        # Only re-read from NT periodically to avoid per-cycle overhead
+        now = RobotController.getFPGATime()
+        if now - self._last_nt_read < SmartPreference._CACHE_PERIOD:
+            return self._value
+        self._last_nt_read = now
         new = None
         if self._type is int or self._type is float:
             new = Preferences.getDouble(self._key, self._value)
@@ -81,11 +88,12 @@ class SmartPreference(object):
         if self._low_bandwidth:
             return
         if self._type is int or self._type is float:
-            self._value = Preferences.setDouble(self._key, self._value)
+            Preferences.setDouble(self._key, self._value)
         elif self._type is str:
-            self._value = Preferences.setString(self._key, self._value)
+            Preferences.setString(self._key, self._value)
         elif self._type is bool:
-            self._value = Preferences.setBoolean(self._key, self._value)
+            Preferences.setBoolean(self._key, self._value)
+        self._last_nt_read = RobotController.getFPGATime()  # Cache is fresh after set
 
     def has_changed() -> bool:
         """Returns if any SmartPreference has changed since checked.

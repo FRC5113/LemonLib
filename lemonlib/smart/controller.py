@@ -17,7 +17,8 @@ class SmartController(Sendable):
         self.output = 0
         self.tolerance = 0.0
         if feedback_enabled:
-            SmartDashboard.putData(f"SmartController/{key}_controller", self)
+            # SmartDashboard.putData(f"SmartController/{key}_controller", self)
+            pass
 
     def setTolerance(self, error_tolerance: float):
         """Sets the error tolerance for the controller."""

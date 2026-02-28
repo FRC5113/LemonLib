@@ -129,7 +129,7 @@ class AlertManager(Sendable):
         """
         Sendable.__init__(self)
         AlertManager.logger = logger
-        SmartDashboard.putData("Alerts", self)
+        # SmartDashboard.putData("Alerts", self)
 
     def initSendable(self, builder: SendableBuilder) -> None:
         """

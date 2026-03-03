@@ -1,4 +1,3 @@
-from wpilib import SmartDashboard
 from wpiutil import Sendable, SendableBuilder
 
 

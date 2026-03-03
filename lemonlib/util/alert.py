@@ -2,7 +2,7 @@ from enum import Enum
 from logging import Logger
 from typing import List
 
-from wpilib import SmartDashboard, Timer
+from wpilib import Timer
 from wpiutil import Sendable, SendableBuilder
 
 from .elastic import Notification, send_notification

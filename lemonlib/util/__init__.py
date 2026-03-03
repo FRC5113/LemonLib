@@ -37,7 +37,6 @@ import inspect
 from pathlib import Path
 from typing import Callable
 
-from magicbot import feedback
 from wpilib import DriverStation
 
 

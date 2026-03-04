@@ -1,4 +1,4 @@
-from photonlibpy.photonCamera import PhotonCamera
+from photonlibpy.photonCamera import PhotonCamera, setVersionCheckEnabled
 from robotpy_apriltag import AprilTagFieldLayout
 from wpimath.geometry import Transform3d
 
@@ -11,6 +11,7 @@ class LemonCamera(PhotonCamera):
         name: str,
         camera_to_bot: Transform3d,
         april_tag_field: AprilTagFieldLayout,
+        version_check: bool = True
     ):
         """Parameters:
         camera_name -- name of camera in PhotonVision
@@ -20,6 +21,7 @@ class LemonCamera(PhotonCamera):
         PhotonCamera.__init__(self, name)
         self.camera_to_bot = camera_to_bot
         self.april_tag_field = april_tag_field
+        setVersionCheckEnabled(version_check)
 
     def update(self):
         self.results = self.getAllUnreadResults()

@@ -2,7 +2,7 @@ from enum import Enum
 from logging import Logger
 from typing import List
 
-from wpilib import Timer
+from wpilib import SmartDashboard, Timer
 from wpiutil import Sendable, SendableBuilder
 
 from .elastic import Notification, send_notification
@@ -129,7 +129,7 @@ class AlertManager(Sendable):
         """
         Sendable.__init__(self)
         AlertManager.logger = logger
-        # SmartDashboard.putData("Alerts", self)
+        SmartDashboard.putData("Alerts", self)
 
     def initSendable(self, builder: SendableBuilder) -> None:
         """

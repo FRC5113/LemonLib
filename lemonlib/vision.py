@@ -11,7 +11,7 @@ class LemonCamera(PhotonCamera):
         name: str,
         camera_to_bot: Transform3d,
         april_tag_field: AprilTagFieldLayout,
-        version_check: bool = True
+        version_check: bool = True,
     ):
         """Parameters:
         camera_name -- name of camera in PhotonVision

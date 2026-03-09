@@ -1,4 +1,4 @@
-from .lemoncamsim import LemonCameraSim
+from .lemoncamsim import LemonCameraSim, LemonVisionSim
 from .lemoninputsim import LemonInputSim
 from .talonfxsim import FalconSim, FalconSimFOC, KrakenSim, KrakenSimFOC
 
@@ -10,4 +10,5 @@ __all__ = [
     "KrakenSim",
     "KrakenSimFOC",
     "LemonCameraSim",
+    "LemonVisionSim",
 ]

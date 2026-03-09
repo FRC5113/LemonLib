@@ -7,15 +7,30 @@ from wpimath.geometry import Pose2d, Rotation2d
 from ..vision import LemonCamera
 
 
+class LemonVisionSim:
+    """Shared VisionSystemSim that manages all simulated cameras.
+    Create one instance and register all cameras with it, then call
+    `update()` once per physics tick to process all cameras together.
+    """
+
+    def __init__(self, field_layout: AprilTagFieldLayout):
+        self.vision_sim = VisionSystemSim("vision_sim")
+        self.vision_sim.addAprilTags(field_layout)
+
+    def add_camera(self, camera_sim: "LemonCameraSim") -> None:
+        self.vision_sim.addCamera(camera_sim, camera_sim.camera.camera_to_bot)
+
+    def update(self, pose: Pose2d) -> None:
+        self.vision_sim.update(pose)
+
+
 class LemonCameraSim(PhotonCameraSim):
     """Simulated version of a LemonCamera. This class functions exactly
     the same in code except for the following:
     1. Must be initialized with an `AprilTagFieldLayout` and an FOV
-    2. `set_robot_pose()` must be called periodically to update the pose
-    of the robot. This should not be taken from a pose estimator that
-    uses vision updates, but rather a pose simulated in physics.py
-    3. This simulation assumes that the camera is at the center of the
-    robot looking directly forward, but the difference should be negligible
+    2. Must be registered with a shared `LemonVisionSim` instance
+    3. `LemonVisionSim.update()` must be called once per tick to update
+    all cameras together with the robot pose
     """
 
     def __init__(
@@ -36,10 +51,6 @@ class LemonCameraSim(PhotonCameraSim):
         self.fov = Rotation2d.fromDegrees(fov)
         self.camera = camera
 
-        # Vision Simulation
-        self.vision_sim = VisionSystemSim("vision_sim")
-        self.vision_sim.addAprilTags(self.field_layout)
-        self.vision_sim.resetRobotPose
         self.camera_props = SimCameraProperties()
         self.camera_props.setCalibrationFromFOV(640, 480, self.fov)
         self.camera_props.setFPS(fps)
@@ -48,7 +59,3 @@ class LemonCameraSim(PhotonCameraSim):
         PhotonCameraSim.__init__(
             self, self.camera, self.camera_props, self.field_layout
         )
-        self.vision_sim.addCamera(self, self.camera.camera_to_bot)
-
-    def update(self, pose: Pose2d) -> None:
-        self.vision_sim.update(pose)

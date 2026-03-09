@@ -99,33 +99,20 @@ class LemonInput(GenericHID):
         GenericHID.__init__(self, port)
 
         if type == "auto":
-            if RobotBase.isSimulation():
+            if RobotBase.isSimulation() or DriverStation.getJoystickIsXbox(port):
                 self.button_map = self.xbox_buttons
                 self.contype = "Xbox"
-
-            elif DriverStation.getJoystickIsXbox(port):
-                self.button_map = self.xbox_buttons
-                self.contype = "Xbox"
-
             else:
                 self.button_map = self.ps5_buttons
                 self.contype = "PS5"
 
         elif type == "Xbox":
-            if RobotBase.isSimulation():
-                self.button_map = self.xbox_buttons
-                self.contype = "Xbox"
-            else:
-                self.button_map = self.xbox_buttons
-                self.contype = "Xbox"
+            self.button_map = self.xbox_buttons
+            self.contype = "Xbox"
 
         elif type == "PS5":
-            if RobotBase.isSimulation():
-                self.button_map = self.ps5_buttons
-                self.contype = "PS5"
-            else:
-                self.button_map = self.ps5_buttons
-                self.contype = "PS5"
+            self.button_map = self.ps5_buttons
+            self.contype = "PS5"
 
     def getType(self):
         """Returns the type of controller (Xbox or PS5)."""

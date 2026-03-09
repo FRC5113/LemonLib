@@ -54,7 +54,7 @@ class SmartProfile(Sendable):
         """
         Sendable.__init__(self)
         self.profile_key = profile_key
-        self.nt = SmartNT(f"SmartProfile/{profile_key}", True)
+        self.nt = SmartNT(f"SmartProfile/{profile_key}")
         self.tuning_enabled = tuning_enabled
         self.gains = gains
         if tuning_enabled:
@@ -70,7 +70,6 @@ class SmartProfile(Sendable):
         for gain_key in self.gains:
             builder.addDoubleProperty(
                 gain_key,
-                # optional arguments used to hackily avoid late binding
                 (lambda key=gain_key: self.gains[key]),
                 (lambda value, key=gain_key: self._set_gain(key, value)),
             )
@@ -84,9 +83,9 @@ class SmartProfile(Sendable):
         def inner(func):
             def wrapper(self, key, feedback_enabled=None):
                 missing_reqs = requirements - set(self.gains.keys())
-                assert (
-                    len(missing_reqs) == 0
-                ), f"Requires gains: {', '.join(missing_reqs)}"
+                assert len(missing_reqs) == 0, (
+                    f"Requires gains: {', '.join(missing_reqs)}"
+                )
                 return func(self, key, feedback_enabled)
 
             return wrapper

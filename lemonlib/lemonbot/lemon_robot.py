@@ -82,7 +82,6 @@ class LemonRobot(magicbot.MagicRobot):
         SmartDashboard and LiveWindow
         """
         super().robotPeriodic()
-        watchdog = self.watchdog
 
     def _enabled_periodic(self) -> None:
         watchdog = self.watchdog

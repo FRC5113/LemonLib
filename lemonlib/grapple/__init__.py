@@ -1,10 +1,18 @@
 from libgrapplefrc import (
-    can_bridge_tcp,
     LaserCAN as _LaserCAN,
+)
+from libgrapplefrc import (
     LaserCanMeasurement as _LaserCanMeasurement,
+)
+from libgrapplefrc import (
     LaserCanRangingMode,
-    LaserCanRoi as _LaserCanRoi,
     LaserCanTimingBudget,
+    can_bridge_tcp,
+)
+from libgrapplefrc import (
+    LaserCanRoi as _LaserCanRoi,
+)
+from libgrapplefrc import (
     MitoCANdria as _MitoCANdria,
 )
 

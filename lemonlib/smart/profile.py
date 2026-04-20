@@ -1,22 +1,21 @@
+from phoenix6 import signals
+from phoenix6.configs import Slot0Configs
 from wpilib import Preferences, SmartDashboard
-from wpimath.trajectory import TrapezoidProfile, TrapezoidProfileRadians
-from wpiutil import Sendable, SendableBuilder
 from wpimath.controller import (
+    ArmFeedforward,
+    ElevatorFeedforward,
+    LTVUnicycleController,
     PIDController,
     ProfiledPIDController,
     ProfiledPIDControllerRadians,
     SimpleMotorFeedforwardMeters,
-    ElevatorFeedforward,
-    ArmFeedforward,
-    LTVDifferentialDriveController,
-    LTVUnicycleController,
 )
-from wpimath.units import meters, seconds
 from wpimath.system import LinearSystem_2_2_2
-from .controller import SmartController
-from phoenix6.configs import Slot0Configs
-from phoenix6 import signals
+from wpimath.trajectory import TrapezoidProfile, TrapezoidProfileRadians
+from wpimath.units import meters, seconds
+from wpiutil import Sendable, SendableBuilder
 
+from .controller import SmartController
 from .nettables import SmartNT
 
 
@@ -55,7 +54,7 @@ class SmartProfile(Sendable):
         """
         Sendable.__init__(self)
         self.profile_key = profile_key
-        self.nt = SmartNT(f"SmartProfile/{profile_key}", True)
+        self.nt = SmartNT(f"SmartProfile/{profile_key}")
         self.tuning_enabled = tuning_enabled
         self.gains = gains
         if tuning_enabled:
@@ -71,7 +70,6 @@ class SmartProfile(Sendable):
         for gain_key in self.gains:
             builder.addDoubleProperty(
                 gain_key,
-                # optional arguments used to hackily avoid late binding
                 (lambda key=gain_key: self.gains[key]),
                 (lambda value, key=gain_key: self._set_gain(key, value)),
             )
@@ -134,21 +132,62 @@ class SmartProfile(Sendable):
         controller.with_k_d(self.gains["kD"])
         return controller
 
-    def create_ctre_turret_controller(self) -> Slot0Configs:
+    def create_ctre_turret_controller(self):
         """Creates a CTRE PIDController. Use `create_pid_controller()`
         instead if possible.
-        Requires kP, kI, kD,kS, kV,kA
+        Requires kP,kI,kD,kS,kV,kMaxV,kMaxA
         """
         controller = Slot0Configs()
-        controller.with_k_p(self.gains["kP"])
-        controller.with_k_i(self.gains["kI"])
-        controller.with_k_d(self.gains["kD"])
-        controller.with_k_s(self.gains["kS"])
-        controller.with_k_v(self.gains["kV"])
-        controller.with_k_a(self.gains["kA"])
-        controller.with_static_feedforward_sign(
+        controller.k_p = self.gains["kP"]
+        controller.k_i = self.gains["kI"]
+        controller.k_d = self.gains["kD"]
+        controller.k_s = self.gains["kS"]
+        controller.k_v = self.gains["kV"]
+        controller.k_a = self.gains["kA"] if "kA" in self.gains else 0
+        controller.static_feedforward_sign = (
             signals.StaticFeedforwardSignValue.USE_CLOSED_LOOP_SIGN
         )
+
+        return controller
+
+    def create_ctre_elevator_controller(self):
+        """Creates a CTRE PIDController. Use `create_pid_controller()`
+        instead if possible.
+        Requires kP,kI,kD,kS,kG,kV,kMaxV,kMaxA
+        """
+        controller = Slot0Configs()
+        controller.k_p = self.gains["kP"]
+        controller.k_i = self.gains["kI"]
+        controller.k_d = self.gains["kD"]
+        controller.k_s = self.gains["kS"]
+        controller.k_g = self.gains["kG"]
+        controller.k_v = self.gains["kV"]
+        controller.k_a = self.gains["kA"] if "kA" in self.gains else 0
+        controller.static_feedforward_sign = (
+            signals.StaticFeedforwardSignValue.USE_CLOSED_LOOP_SIGN
+        )
+        controller.gravity_type = signals.GravityTypeValue.ELEVATOR_STATIC
+
+        return controller
+
+    def create_ctre_arm_controller(self):
+        """Creates a CTRE PIDController. Use `create_pid_controller()`
+        instead if possible.
+        Requires kP,kI,kD,kS,kG,kV,kMaxV,kMaxA
+        """
+        controller = Slot0Configs()
+        controller.k_p = self.gains["kP"]
+        controller.k_i = self.gains["kI"]
+        controller.k_d = self.gains["kD"]
+        controller.k_s = self.gains["kS"]
+        controller.k_g = self.gains["kG"]
+        controller.k_v = self.gains["kV"]
+        controller.k_a = self.gains["kA"] if "kA" in self.gains else 0
+        controller.static_feedforward_sign = (
+            signals.StaticFeedforwardSignValue.USE_CLOSED_LOOP_SIGN
+        )
+        controller.gravity_type = signals.GravityTypeValue.ARM_COSINE
+
         return controller
 
     def create_ctre_flywheel_controller(self) -> Slot0Configs:
@@ -157,13 +196,13 @@ class SmartProfile(Sendable):
         Requires kP, kI, kD,kS, kV,kA
         """
         controller = Slot0Configs()
-        controller.with_k_p(self.gains["kP"])
-        controller.with_k_i(self.gains["kI"])
-        controller.with_k_d(self.gains["kD"])
-        controller.with_k_s(self.gains["kS"])
-        controller.with_k_v(self.gains["kV"])
-        controller.with_k_a(self.gains["kA"])
-        controller.with_static_feedforward_sign(
+        controller.k_p = self.gains["kP"]
+        controller.k_i = self.gains["kI"]
+        controller.k_d = self.gains["kD"]
+        controller.k_s = self.gains["kS"]
+        controller.k_v = self.gains["kV"]
+        controller.k_a = self.gains["kA"]
+        controller.static_feedforward_sign = (
             signals.StaticFeedforwardSignValue.USE_VELOCITY_SIGN
         )
         return controller

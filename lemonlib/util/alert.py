@@ -1,10 +1,10 @@
 from enum import Enum
 from logging import Logger
-from typing import List, Dict
-from wpilib import SmartDashboard, Timer
+from typing import List
+
+from wpilib import DriverStation, SmartDashboard, Timer
 from wpiutil import Sendable, SendableBuilder
-from ntcore import NetworkTableInstance, PubSubOptions
-import json
+
 from .elastic import Notification, send_notification
 
 
@@ -120,24 +120,20 @@ class AlertManager(Sendable):
     alerts: List[Alert] = []
     logger: Logger = None
 
-    def __init__(self, logger):
+    def __init__(self, logger, enabled: bool = True):
         """
-        Initialize the AlertManager and add it to the SmartDashboard.
+        Initialize the AlertManager.
 
         Args:
             logger (Logger): Logger instance for logging alert messages.
+            enabled (bool): Whether to publish alerts to dashboard.
         """
         Sendable.__init__(self)
         AlertManager.logger = logger
-        SmartDashboard.putData("Alerts", self)
+        if enabled and not DriverStation.isFMSAttached():
+            SmartDashboard.putData("Alerts", self)
 
     def initSendable(self, builder: SendableBuilder) -> None:
-        """
-        Configure the SmartDashboard properties for the alerts.
-
-        Args:
-            builder (SendableBuilder): The builder to configure.
-        """
         builder.setSmartDashboardType("Alerts")
         builder.addStringArrayProperty(
             "errors", lambda: AlertManager.get_strings(AlertType.ERROR), lambda _: None

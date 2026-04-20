@@ -1,5 +1,5 @@
-from wpilib.interfaces import GenericHID
 from wpilib.simulation import GenericHIDSim
+
 from ..control import LemonInput
 
 

@@ -26,19 +26,36 @@ class AsymmetricSlewLimiter:
         """
         Process input signal through slew rate limiter.
 
+        Uses rising_rate when the magnitude of the signal is increasing
+        (accelerating) and falling_rate when it is decreasing (decelerating),
+        so that the limiter behaves correctly for both positive and negative
+        velocity commands.
+
         Args:
-            input_signal (float): float Input signal value(s)
+            input_signal (float): Input signal value
 
         Returns:
             Rate-limited output signal
         """
         current_time = self.get_time_seconds()
         time_diff = current_time - self.prev_time
+        self.prev_time = current_time
+
         diff = input_signal - self.prev_value
-        if diff > 0:
-            change = min(diff, self.rising_rate * time_diff)
+
+        # Pick rate based on whether we are accelerating (magnitude increasing)
+        # or decelerating (magnitude decreasing).
+        accelerating = abs(input_signal) > abs(self.prev_value)
+        rate = self.rising_rate if accelerating else self.falling_rate
+
+        max_change = rate * time_diff
+        if diff > max_change:
+            change = max_change
+        elif diff < -max_change:
+            change = -max_change
         else:
-            change = max(diff, -self.falling_rate * time_diff)
+            change = diff
+
         self.prev_value += change
         return self.prev_value
 

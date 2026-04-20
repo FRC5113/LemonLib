@@ -1,8 +1,7 @@
 import functools
-import inspect
-from magicbot import MagicRobot, tunable, feedback
+from typing import Callable, Optional
+
 from wpilib import DriverStation
-from typing import Optional, Callable
 
 
 def fms_feedback(f=None, *, key: Optional[str] = None) -> Callable:
@@ -17,6 +16,5 @@ def fms_feedback(f=None, *, key: Optional[str] = None) -> Callable:
         return f(self)
 
     if not DriverStation.isFMSAttached():
-        wrapper._magic_feedback = True
-        wrapper._magic_feedback_key = key
+        wrapper._magic_feedback = (key, None)
     return wrapper

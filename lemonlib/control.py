@@ -1,10 +1,8 @@
+import math
+from enum import IntEnum
+
 from wpilib import DriverStation, RobotBase
 from wpilib.interfaces import GenericHID
-from wpilib.simulation import GenericHIDSim
-from wpiutil import Sendable
-from lemonlib.util import Alert, AlertType
-from enum import IntEnum
-import math
 
 RIGHT_RUMBLE = GenericHID.RumbleType.kRightRumble
 LEFT_RUMBLE = GenericHID.RumbleType.kLeftRumble
@@ -101,33 +99,20 @@ class LemonInput(GenericHID):
         GenericHID.__init__(self, port)
 
         if type == "auto":
-            if RobotBase.isSimulation():
+            if RobotBase.isSimulation() or DriverStation.getJoystickIsXbox(port):
                 self.button_map = self.xbox_buttons
                 self.contype = "Xbox"
-
-            elif DriverStation.getJoystickIsGamepad(port):
-                self.button_map = self.xbox_buttons
-                self.contype = "Xbox"
-
             else:
                 self.button_map = self.ps5_buttons
                 self.contype = "PS5"
 
         elif type == "Xbox":
-            if RobotBase.isSimulation():
-                self.button_map = self.xbox_buttons
-                self.contype = "Xbox"
-            else:
-                self.button_map = self.xbox_buttons
-                self.contype = "Xbox"
+            self.button_map = self.xbox_buttons
+            self.contype = "Xbox"
 
         elif type == "PS5":
-            if RobotBase.isSimulation():
-                self.button_map = self.ps5_buttons
-                self.contype = "PS5"
-            else:
-                self.button_map = self.ps5_buttons
-                self.contype = "PS5"
+            self.button_map = self.ps5_buttons
+            self.contype = "PS5"
 
     def getType(self):
         """Returns the type of controller (Xbox or PS5)."""

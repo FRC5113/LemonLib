@@ -2,10 +2,8 @@ import json
 from enum import Enum
 
 from ntcore import NetworkTableInstance, PubSubOptions
-
-from wpinet import WebServer
-
 from wpilib import getDeployDirectory
+from wpinet import WebServer
 
 
 class NotificationLevel(Enum):

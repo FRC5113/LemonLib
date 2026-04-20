@@ -1,13 +1,6 @@
 import math
-from ntcore import NetworkTableInstance
-from phoenix6.configs.cancoder_configs import CANcoderConfiguration
-from phoenix6.configs.talon_fx_configs import TalonFXConfiguration
-from phoenix6.hardware.cancoder import CANcoder
+
 from phoenix6.hardware.pigeon2 import Pigeon2
-from phoenix6.hardware.talon_fx import TalonFX
-from phoenix6.configs.talon_fx_configs import FeedbackSensorSourceValue
-from phoenix6.configs.config_groups import Slot0Configs, Slot1Configs, FeedbackConfigs
-from phoenix6.signals.spn_enums import GravityTypeValue, SensorDirectionValue
 
 
 class LemonPigeon:

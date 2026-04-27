@@ -89,9 +89,9 @@ class LemonInput(GenericHID):
                 if DriverStation.getJoystickName(port) != "":
                     if type == "auto":
                         break
-                    if type == "Xbox" and DriverStation.getJoystickIsXbox(port):
+                    if type == "Xbox" and self._is_Xbox(port):
                         break
-                    if type == "PS5" and not DriverStation.getJoystickIsXbox(port):
+                    if type == "PS5" and not self._is_Xbox(port):
                         break
                 port += 1
             else:
@@ -99,7 +99,7 @@ class LemonInput(GenericHID):
         GenericHID.__init__(self, port)
 
         if type == "auto":
-            if RobotBase.isSimulation() or DriverStation.getJoystickIsXbox(port):
+            if RobotBase.isSimulation() or self._is_Xbox(port):
                 self.button_map = self.xbox_buttons
                 self.contype = "Xbox"
             else:
@@ -113,6 +113,15 @@ class LemonInput(GenericHID):
         elif type == "PS5":
             self.button_map = self.ps5_buttons
             self.contype = "PS5"
+
+    def _is_Xbox(self, port: int) -> bool:
+        """
+        Checks if the controller at the specified port is an Xbox controller.
+        Args:
+            port (int): The port number to check.
+        """
+        names = ["Xbox", "X-Box", "XBOX", "XBOX 360", "XBOX One", "XBOX Series"]
+        return any(name in DriverStation.getJoystickName(port) for name in names)
 
     def getType(self):
         """Returns the type of controller (Xbox or PS5)."""

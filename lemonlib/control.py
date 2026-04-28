@@ -1,7 +1,7 @@
 import math
 from enum import IntEnum
 
-from wpilib import DriverStation, RobotBase
+from wpilib import DriverStation
 from wpilib.interfaces import GenericHID
 
 RIGHT_RUMBLE = GenericHID.RumbleType.kRightRumble
@@ -81,7 +81,6 @@ class LemonInput(GenericHID):
                 - "PS5": Forces the controller type to PS5.
         """
         # Sendable.__init__(self)
-
         if port is None:
             port = 0
             while port < 5:
@@ -91,7 +90,7 @@ class LemonInput(GenericHID):
                         break
                     if type == "Xbox" and self._is_Xbox(port):
                         break
-                    if type == "PS5" and not self._is_Xbox(port):
+                    if type == "PS5" and self._is_PS5(port):
                         break
                 port += 1
             else:
@@ -99,9 +98,12 @@ class LemonInput(GenericHID):
         GenericHID.__init__(self, port)
 
         if type == "auto":
-            if RobotBase.isSimulation() or self._is_Xbox(port):
+            if self._is_Xbox(port):
                 self.button_map = self.xbox_buttons
                 self.contype = "Xbox"
+            elif self._is_PS5(port):
+                self.button_map = self.ps5_buttons
+                self.contype = "PS5"
             else:
                 self.button_map = self.ps5_buttons
                 self.contype = "PS5"
@@ -114,14 +116,27 @@ class LemonInput(GenericHID):
             self.button_map = self.ps5_buttons
             self.contype = "PS5"
 
+        print(f"Controller initialized on port {port} with type {self.contype}")
+
     def _is_Xbox(self, port: int) -> bool:
         """
         Checks if the controller at the specified port is an Xbox controller.
         Args:
             port (int): The port number to check.
         """
-        names = ["Xbox", "X-Box", "XBOX", "XBOX 360", "XBOX One", "XBOX Series"]
-        return any(name in DriverStation.getJoystickName(port) for name in names)
+        joystick_name = DriverStation.getJoystickName(port).lower()
+        xbox_variants = ["xbox", "x-box", "360", "series x", "series s"]
+        return any(variant in joystick_name for variant in xbox_variants)
+
+    def _is_PS5(self, port: int) -> bool:
+        """
+        Checks if the controller at the specified port is a PS5 controller.
+        Args:
+            port (int): The port number to check.
+        """
+        joystick_name = DriverStation.getJoystickName(port).lower()
+        ps5_variants = ["ps5", "playstation 5", "dualsense"]
+        return any(variant in joystick_name for variant in ps5_variants)
 
     def getType(self):
         """Returns the type of controller (Xbox or PS5)."""

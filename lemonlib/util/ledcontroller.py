@@ -1,8 +1,8 @@
 import colorsys
-from typing import Tuple
 
 import wpimath.units
-from wpilib import AddressableLED, Color, LEDPattern, RobotController, Timer
+from wpilib import AddressableLED, LEDPattern, RobotController, Timer
+from wpiutil import Color
 
 
 class LEDController:
@@ -19,7 +19,7 @@ class LEDController:
         self.buffer = [AddressableLED.LEDData(0, 0, 0) for _ in range(length)]
         self.led.setLength(length)
         self.led.setData(self.buffer)
-        self.led.start()
+        self.led.setStart(0)
         self.solid_color = None
         self._move_frame_initialized = False
         self._last_lit_indices: list[int] = []
@@ -42,7 +42,7 @@ class LEDController:
     def _write_data(self, index: int, color: Color):
         self.buffer[index].setLED(color)
 
-    def set_solid_color(self, color: Tuple[int, int, int]):
+    def set_solid_color(self, color: tuple[int, int, int]):
         """Sets the entire LED strip to a solid color."""
         if color == self.solid_color:
             return
@@ -53,7 +53,7 @@ class LEDController:
             led.setRGB(r, g, b)
         self.led.setData(self.buffer)
 
-    def set_pixel(self, index: int, color: Tuple[int, int, int]):
+    def set_pixel(self, index: int, color: tuple[int, int, int]):
         """Sets the color of a single LED pixel."""
         self._reset_move_cache()
         self.solid_color = None
@@ -62,7 +62,7 @@ class LEDController:
         self.led.setData(self.buffer)
 
     def set_gradient(
-        self, start_color: Tuple[int, int, int], end_color: Tuple[int, int, int]
+        self, start_color: tuple[int, int, int], end_color: tuple[int, int, int]
     ):
         """Custom preset that Sets a gradient from start_color to end_color across the LED strip."""
         self._reset_move_cache()
@@ -128,7 +128,7 @@ class LEDController:
             colors = [colors]
 
         # Get the current time
-        current_time = Timer.getFPGATimestamp()
+        current_time = Timer.getMonotonicTimestamp()
         length = self.length
         buffer = self.buffer
 
@@ -164,7 +164,7 @@ class LEDController:
         hertz: wpimath.units.hertz = 1,
     ):
         """Moves a fixed-size multicolor block across the strip using RobotController.getTime() for timing."""
-        current_time = Timer.getFPGATimestamp()
+        current_time = Timer.getMonotonicTimestamp()
         length = self.length
         buffer = self.buffer
 
@@ -201,8 +201,8 @@ class LEDController:
 
     def blink(
         self,
-        color1: Tuple[int, int, int],
-        color2: Tuple[int, int, int] = (0, 0, 0),
+        color1: tuple[int, int, int],
+        color2: tuple[int, int, int] = (0, 0, 0),
         hertz: wpimath.units.hertz = 2,
     ):
         """Blinks the entire strip between two colors at the given frequency.
@@ -211,7 +211,7 @@ class LEDController:
         :param color2: The second RGB color. Defaults to off (0, 0, 0).
         :param hertz: Blink frequency in Hz (full cycles per second). Default is 2 Hz.
         """
-        current_time = Timer.getFPGATimestamp()
+        current_time = Timer.getMonotonicTimestamp()
         first = (int(current_time * hertz * 2) % 2) == 0
         if first:
             self.set_solid_color(color1)

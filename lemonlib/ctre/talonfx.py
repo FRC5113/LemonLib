@@ -1,5 +1,5 @@
 import phoenix6
-from wpilib.interfaces import MotorController
+from wpilib import MotorController
 
 
 class LemonTalonFX(phoenix6.hardware.TalonFX, MotorController):

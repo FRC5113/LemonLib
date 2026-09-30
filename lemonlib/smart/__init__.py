@@ -3,4 +3,4 @@ from .nettables import SmartNT
 from .preference import SmartPreference
 from .profile import SmartProfile
 
-__all__ = ["SmartController", "SmartPreference", "SmartProfile", "SmartNT"]
+__all__ = ["SmartController", "SmartNT", "SmartPreference", "SmartProfile"]

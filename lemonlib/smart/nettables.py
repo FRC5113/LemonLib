@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from ntcore import NetworkTableEntry, NetworkTableInstance
 
@@ -10,13 +10,13 @@ class SmartNT:
     a single dict lookup — no string splitting, no sub-table traversal.
     """
 
-    __slots__ = ("table", "_entries", "_nt", "_sa_pubs")
+    __slots__ = ("_entries", "_nt", "_sa_pubs", "table")
 
     def __init__(self, root_table: str = "/"):
         self._nt = NetworkTableInstance.getDefault()
         self.table = self._nt.getTable(root_table.strip("/"))
-        self._entries: Dict[str, NetworkTableEntry] = {}
-        self._sa_pubs: Dict[str, Any] = {}  # StringArray publishers
+        self._entries: dict[str, NetworkTableEntry] = {}
+        self._sa_pubs: dict[str, Any] = {}  # StringArray publishers
 
     def _get_entry(self, key: str) -> NetworkTableEntry:
         try:
@@ -46,7 +46,7 @@ class SmartNT:
     def put_string(self, key: str, value: str) -> None:
         self._get_entry(key).setString(value)
 
-    def put_string_array(self, key: str, value: List[str]) -> None:
+    def put_string_array(self, key: str, value: list[str]) -> None:
         try:
             pub = self._sa_pubs[key]
         except KeyError:

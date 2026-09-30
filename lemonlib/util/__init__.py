@@ -14,28 +14,28 @@ __all__ = [
     "Alert",
     "AlertManager",
     "AlertType",
+    "AsymmetricSlewLimiter",
+    "LEDController",
+    "MagicSysIdRoutine",
+    "Notification",
+    "NotificationLevel",
+    "SnapX",
+    "SnapY",
     "clamp",
     "cubic_curve",
     "curve",
-    "ollie_curve",
-    "linear_curve",
-    "is_red",
-    "SnapY",
-    "SnapX",
-    "LEDController",
-    "MagicSysIdRoutine",
     "get_file",
-    "send_notification",
+    "is_red",
+    "linear_curve",
+    "ollie_curve",
     "select_tab",
+    "send_notification",
     "start_remote_layout",
-    "Notification",
-    "NotificationLevel",
-    "AsymmetricSlewLimiter",
 ]
 
 import inspect
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from wpilib import DriverStation
 

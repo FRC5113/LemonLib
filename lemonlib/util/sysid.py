@@ -1,7 +1,8 @@
 from commands2.sysid import SysIdRoutine
-from magicbot import will_reset_to
 from wpilib import Timer
 from wpilib.sysid import State, SysIdRoutineLog
+
+from modified_libs.magicbot import will_reset_to
 
 
 class MagicSysIdRoutine:

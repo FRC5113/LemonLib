@@ -1,10 +1,10 @@
 import functools
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from wpilib import DriverStation
 
 
-def fms_feedback(f=None, *, key: Optional[str] = None) -> Callable:
+def fms_feedback(f=None, *, key: str | None = None) -> Callable:
     if f is None:
         return functools.partial(fms_feedback, key=key)
 

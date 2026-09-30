@@ -1,14 +1,13 @@
 import math
 from enum import IntEnum
 
-from wpilib import DriverStation, RobotBase
-from wpilib.interfaces import GenericHID
+from wpilib import DriverStationBackend, Gamepad, GenericHID
 
-RIGHT_RUMBLE = GenericHID.RumbleType.kRightRumble
-LEFT_RUMBLE = GenericHID.RumbleType.kLeftRumble
+RIGHT_RUMBLE = GenericHID.RumbleType.RIGHT_RUMBLE
+LEFT_RUMBLE = GenericHID.RumbleType.LEFT_RUMBLE
 
 
-class LemonInput(GenericHID):
+class LemonInput:
     """
     LemonInput is a wrapper class for Xbox
     and PS5 controllers allowing automatic
@@ -51,68 +50,94 @@ class LemonInput(GenericHID):
         kX = 1
         kY = 4
 
-    class legion_buttons(IntEnum):
-        kLeftTrigger = 2
-        kLeftX = 0
-        kLeftY = 1
-        kRightTrigger = 3
-        kRightX = 4
-        kRightY = 5
-        kA = 1
-        kB = 2
-        kBack = 7
-        kLeftBumper = 5
-        kLeftStick = 9
-        kRightBumper = 6
-        kRightStick = 10
-        kStart = 8
-        kX = 3
-        kY = 4
-
-    def __init__(self, port: int = None, type: str = "auto"):
+    def __init__(self, port: int = None, variant: str = "DriverStation"):
         """
         Initializes the control object with the specified port number and type.
         Args:
-            port (int, optional): The port number of the controller. If unset,
-                chooses first controller matching type.
-            type (str, optional): The type of the controller. Defaults to "auto".
+            port (int, optional): The port number of the controller.
+                If unset, chooses first controller matching type not using driverstation maps.
+            variant (str, optional): The type of the controller. Defaults to "auto".
                 - "auto": Automatically detects the controller type.
-                - "Xbox": Forces the controller type to Xbox.
-                - "PS5": Forces the controller type to PS5.
+                - "DriverStation": Uses the DriverStation to detect the controller type.
+                - "Xbox": Forces the controller type to Xbox not using driverstation maps.
+                - "PS5": Forces the controller type to PS5 not using driverstation maps.
         """
-        # Sendable.__init__(self)
+
+        self._using_driverstation_maps = False
 
         if port is None:
-            port = 0
-            while port < 5:
-                # assumes DS gives empty string if no joystick at port
-                if DriverStation.getJoystickName(port) != "":
-                    if type == "auto":
-                        break
-                    if type == "Xbox" and DriverStation.getJoystickIsXbox(port):
-                        break
-                    if type == "PS5" and not DriverStation.getJoystickIsXbox(port):
-                        break
-                port += 1
+            if variant == "DriverStation":
+                self._using_driverstation_maps = True
+                print(
+                    "ERROR: DriverStation type selected but no port specified. Please specify a port."
+                )
             else:
-                print(f"ERROR: No Joystick found matching type: {type}")
-        GenericHID.__init__(self, port)
+                port = 0
+                while port < 5:
+                    # assumes DS gives empty string if no joystick at port
+                    if DriverStationBackend.getJoystickGamepadType(port) != "":
+                        if (
+                            (variant == "auto")
+                            or (variant == "Xbox" and self._is_Xbox(port))
+                            or (variant == "PS5" and self._is_PS5(port))
+                        ):
+                            break
+                    port += 1
+                else:
+                    print(f"ERROR: No Joystick found matching type: {variant}")
 
-        if type == "auto":
-            if RobotBase.isSimulation() or DriverStation.getJoystickIsXbox(port):
-                self.button_map = self.xbox_buttons
+        match variant:
+            case "auto":
+                self._auto_type(port)
+            case "DriverStation":
+                self.contype = "DriverStation"
+                self._using_driverstation_maps = True
+            case "Xbox":
                 self.contype = "Xbox"
-            else:
-                self.button_map = self.ps5_buttons
+                self.button_map = self.xbox_buttons
+            case "PS5":
                 self.contype = "PS5"
+                self.button_map = self.ps5_buttons
+            case _:
+                self.contype = "Unknown"
+                self.button_map = self.xbox_buttons
 
-        elif type == "Xbox":
-            self.button_map = self.xbox_buttons
-            self.contype = "Xbox"
+        self.gamepad = Gamepad(port)
 
-        elif type == "PS5":
-            self.button_map = self.ps5_buttons
-            self.contype = "PS5"
+    def _auto_type(self, port: int):
+        if self._using_driverstation_maps:
+            self.contype = "DriverStation"
+            self._using_driverstation_maps = True
+        else:
+            if self._is_Xbox(port):
+                self.contype = "Xbox"
+                self.button_map = self.xbox_buttons
+            elif self._is_PS5(port):
+                self.contype = "PS5"
+                self.button_map = self.ps5_buttons
+            else:
+                self.contype = "Unknown"
+                self.button_map = self.xbox_buttons
+
+    def _is_Xbox(self, port: int) -> bool:
+        """
+        Checks if the controller at the specified port is an Xbox controller.
+        Args:
+            port (int): The port number to check.
+        """
+        joystick_name = DriverStationBackend.getJoystickName(port).lower()
+        xbox_variants = ["xbox", "x-box", "360", "series x", "series s"]
+        return any(variant in joystick_name for variant in xbox_variants)
+
+    def _is_PS5(self, port: int) -> bool:
+        """
+        Checks if the controller at the specified port is a PS5 controller.
+        Args:
+            port (int): The port number to check.
+        """
+        joystick_name = DriverStationBackend.getJoystickName(port).lower()
+        ps5_variants = ["ps5", "playstation 5", "dualsense"]
+        return any(variant in joystick_name for variant in ps5_variants)
 
     def getType(self):
         """Returns the type of controller (Xbox or PS5)."""
@@ -122,7 +147,9 @@ class LemonInput(GenericHID):
 
     def getLeftBumper(self):
         """Returns the state of the left bumper button."""
-        return self.getRawButton(self.button_map.kLeftBumper.value)
+        if self._using_driverstation_maps:
+            return self.gamepad.getLeftBumperButton()
+        return self.gamepad.getRawButton(self.button_map.kLeftBumper.value)
 
     def getRightBumper(self):
         """
@@ -131,7 +158,9 @@ class LemonInput(GenericHID):
         Returns:
             bool: The state of the right bumper button (pressed or not).
         """
-        return self.getRawButton(self.button_map.kRightBumper.value)
+        if self._using_driverstation_maps:
+            return self.gamepad.getRightBumperButton()
+        return self.gamepad.getRawButton(self.button_map.kRightBumper.value)
 
     def getStartButton(self):
         """
@@ -140,7 +169,9 @@ class LemonInput(GenericHID):
         Returns:
             bool: The state of the start button (pressed or not).
         """
-        return self.getRawButton(self.button_map.kStart.value)
+        if self._using_driverstation_maps:
+            return self.gamepad.getStartButton()
+        return self.gamepad.getRawButton(self.button_map.kStart.value)
 
     def getBackButton(self):
         """
@@ -149,7 +180,9 @@ class LemonInput(GenericHID):
         Returns:
             bool: The state of the back button (pressed or not).
         """
-        return self.getRawButton(self.button_map.kBack.value)
+        if self._using_driverstation_maps:
+            return self.gamepad.getBackButton()
+        return self.gamepad.getRawButton(self.button_map.kBack.value)
 
     def getAButton(self):
         """
@@ -158,6 +191,8 @@ class LemonInput(GenericHID):
         Returns:
             bool: The state of the 'A' button (pressed or not).
         """
+        if self._using_driverstation_maps:
+            return self.gamepad.getSouthFaceButton()
         return self.getRawButton(self.button_map.kA.value)
 
     def getBButton(self):
@@ -390,47 +425,3 @@ class LemonInput(GenericHID):
             float: The Y-axis value of the POV.
         """
         return self.__pov_xy()[1]
-
-    def initSendable(self, builder):
-        """
-        Initializes the sendable for the LemonInput class.
-
-        Args:
-            builder: The sendable builder.
-        """
-        builder.setSmartDashboardType("LemonInput")
-        builder.addStringProperty("Type", lambda: self.contype, lambda: None)
-        builder.addBooleanProperty(
-            "LeftBumper", lambda: self.getLeftBumper(), lambda: None
-        )
-        builder.addBooleanProperty(
-            "RightBumper", lambda: self.getRightBumper(), lambda: None
-        )
-        builder.addBooleanProperty(
-            "StartButton", lambda: self.getStartButton(), lambda: None
-        )
-        builder.addBooleanProperty(
-            "BackButton", lambda: self.getBackButton(), lambda: None
-        )
-        builder.addBooleanProperty("AButton", lambda: self.getAButton(), lambda: None)
-        builder.addBooleanProperty("BButton", lambda: self.getBButton(), lambda: None)
-        builder.addBooleanProperty("XButton", lambda: self.getXButton(), lambda: None)
-        builder.addBooleanProperty("YButton", lambda: self.getYButton(), lambda: None)
-        builder.addBooleanProperty(
-            "LStickButton", lambda: self.getLeftStickButton(), lambda: None
-        )
-        builder.addBooleanProperty(
-            "RStickButton", lambda: self.getRightStickButton(), lambda: None
-        )
-        builder.addDoubleProperty("LeftX", lambda: self.getLeftX(), lambda: None)
-        builder.addDoubleProperty("LeftY", lambda: self.getLeftY(), lambda: None)
-        builder.addDoubleProperty("RightX", lambda: self.getRightX(), lambda: None)
-        builder.addDoubleProperty("RightY", lambda: self.getRightY(), lambda: None)
-        builder.addDoubleProperty(
-            "RightTrigger", lambda: self.getRightTriggerAxis(), lambda: None
-        )
-        builder.addDoubleProperty(
-            "LeftTrigger", lambda: self.getLeftTriggerAxis(), lambda: None
-        )
-        builder.addDoubleProperty("POV_X", lambda: self.getPovX(), lambda: None)
-        builder.addDoubleProperty("POV_Y", lambda: self.getPovY(), lambda: None)

@@ -1,7 +1,10 @@
-from wpilib import Preferences, RobotController
+from wpilib import Preferences, Timer, RobotController
+from typing import Any, Generic, TypeVar
+
+T = TypeVar("T", int, float, str, bool)
 
 
-class SmartPreference(object):
+class SmartPreference(Generic[T]):
     """Wrapper for wpilib Preferences that improves it in a few ways:
     1. Previous values from NetworkTables are remembered if connection
     is lost instead of defaulting to the values set in code
@@ -34,9 +37,9 @@ class SmartPreference(object):
     _changed_flag = False
     _CACHE_PERIOD = 250_000  # microseconds between NT reads
 
-    def __init__(self, value) -> None:
-        self._value = value
-        self._type = type(value)
+    def __init__(self, value: T) -> None:
+        self._value: Any = value
+        self._type: type[Any] = type(value)
         self._last_nt_read = 0.0
         if self._type not in (int, float, str, bool):
             raise TypeError(
@@ -58,11 +61,11 @@ class SmartPreference(object):
         elif self._type is bool:
             Preferences.initBoolean(self._key, self._value)
 
-    def __get__(self, obj, objtype=None):
+    def __get__(self, obj: object, objtype: type | None = None) -> T:
         if self._low_bandwidth:
             return self._value
         # Only re-read from NT periodically to avoid per-cycle overhead
-        now = RobotController.getFPGATime()
+        now = Timer.getMonotonicTimestamp()
         if now - self._last_nt_read < SmartPreference._CACHE_PERIOD:
             return self._value
         self._last_nt_read = now
@@ -78,7 +81,7 @@ class SmartPreference(object):
             self._value = new
         return self._value
 
-    def __set__(self, obj, value):
+    def __set__(self, obj: object, value: T) -> None:
         if type(value) is not self._type:
             raise TypeError(
                 f"Set value type ({type(value)} does not match original ({self._type}))"
@@ -93,8 +96,11 @@ class SmartPreference(object):
             Preferences.setString(self._key, self._value)
         elif self._type is bool:
             Preferences.setBoolean(self._key, self._value)
-        self._last_nt_read = RobotController.getFPGATime()  # Cache is fresh after set
+        self._last_nt_read = (
+            RobotController.getMonotonicTime()
+        )  # Cache is fresh after set
 
+    @staticmethod
     def has_changed() -> bool:
         """Returns if any SmartPreference has changed since checked.
         Only works if called statically."""

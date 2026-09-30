@@ -4,8 +4,8 @@ from .lemonbot.tunable import fms_feedback
 from .vision import LemonCamera
 
 __all__ = [
-    "LemonInput",
     "LemonCamera",
+    "LemonInput",
     "LemonRobot",
     "fms_feedback",
     "is_fms_attached",

@@ -3,12 +3,12 @@ from .lemoninputsim import LemonInputSim
 from .talonfxsim import FalconSim, FalconSimFOC, KrakenSim, KrakenSimFOC
 
 __all__ = [
-    "KilloughDriveSim",
-    "LemonInputSim",
     "FalconSim",
     "FalconSimFOC",
+    "KilloughDriveSim",
     "KrakenSim",
     "KrakenSimFOC",
     "LemonCameraSim",
+    "LemonInputSim",
     "LemonVisionSim",
 ]

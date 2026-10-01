@@ -104,8 +104,7 @@ def main(src_dir, output_dir, dir):
 
     sidebar_items = generate_sidebar_groups(sidebar_groups)
 
-    astro_config = (
-    f"""
+    astro_config = f"""
         // @ts-check
         import {{ defineConfig }} from 'astro/config';
         import starlight from '@astrojs/starlight';
@@ -141,7 +140,7 @@ def main(src_dir, output_dir, dir):
             }})
         ]
         }});
-    """)
+    """
     astro_dir = os.path.join(dir, "astro.config.mjs")
     with open(astro_dir, "w", encoding="utf-8") as f:
         f.write(astro_config)

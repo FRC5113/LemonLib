@@ -1,10 +1,9 @@
-from wpilib.drive import DifferentialDrive
-from wpiutil import Sendable
+from wpilib import DifferentialDrive
 
 from lemonlib.smart.preference import SmartPreference
 
 
-class SwagDrive(Sendable):
+class SwagDrive:
     maxspeed = SmartPreference(0.8)
     defspeed = SmartPreference(0.5)
     swagadd = SmartPreference(1)
@@ -13,7 +12,7 @@ class SwagDrive(Sendable):
     swagmulti = SmartPreference(10)
 
     def __init__(self, leftMotor, rightMotor):
-        Sendable.__init__(self)
+
         self.leftMotor = leftMotor
         self.rightMotor = rightMotor
         self.robotDrive = DifferentialDrive(self.leftMotor, self.rightMotor)
@@ -35,11 +34,10 @@ class SwagDrive(Sendable):
 
         moveToSend = moveValue
         rotateToSend = rotateValue
+        moveDiff = abs(moveValue - self.oldMove)
+        rotateDiff = abs(rotateValue - self.oldRotate)
 
         if self.swagPeriod == 0:
-            moveDiff = abs(moveValue - self.oldMove)
-            rotateDiff = abs(rotateValue - self.oldRotate)
-
             if moveDiff < SWAG_BARRIER:
                 moveToSend = (moveDiff * SWAG_MULTIPLIER) + moveValue
             else:
@@ -62,19 +60,7 @@ class SwagDrive(Sendable):
         self.rotatediff = rotateDiff
         self.movediff = moveDiff
         # Call arcadeDrive with modified move and rotate values
-        self.robotDrive.arcadeDrive(moveToSend, rotateToSend)
+        self.robotDrive.arcade_drive(moveToSend, rotateToSend)
 
         self.oldMove = moveValue
         self.oldRotate = rotateValue
-
-    def initSendable(self, builder):
-        builder.setSmartDashboardType("SwagDrive")
-        builder.addDoubleProperty("Swag Level", lambda: self.swagLevel, lambda _: None)
-        builder.addDoubleProperty(
-            "Swag Period", lambda: self.swagPeriod, lambda _: None
-        )
-        builder.addDoubleProperty(
-            "Rotate Diff", lambda: self.rotatediff, lambda _: None
-        )
-        builder.addDoubleProperty("Move Diff", lambda: self.movediff, lambda _: None)
-        self.robotDrive.initSendable(builder)

@@ -37,7 +37,7 @@ import inspect
 from collections.abc import Callable
 from pathlib import Path
 
-from wpilib import DriverStation
+from wpilib import Alliance, DriverStationBackend
 
 
 def clamp(value: float, min_value: float, max_value: float) -> float:
@@ -46,7 +46,7 @@ def clamp(value: float, min_value: float, max_value: float) -> float:
 
 
 def is_red() -> bool:
-    return DriverStation.getAlliance() == DriverStation.Alliance.kRed
+    return DriverStationBackend.get_alliance() == Alliance.RED
 
 
 def get_file(path: str) -> str:
@@ -81,7 +81,8 @@ def curve(
         """Apply a curve to an input. Be sure to call this function to get an output, not curve."""
         if abs(input_val) < deadband:
             return offset if absolute_offset else 0
-        applied_offset = (1 if absolute_offset else abs(input_val) / input_val) * offset
+        sign = (input_val > 0) - (input_val < 0)
+        applied_offset = (1 if absolute_offset else sign) * offset
         output_val = mapping(input_val) + applied_offset
         if max_mag == 0:
             return output_val
@@ -110,6 +111,18 @@ def ollie_curve(
 ) -> Callable[[float], float]:
     return curve(
         lambda x: scalar * x * abs(x), offset, deadband, max_mag, absolute_offset
+    )
+
+
+def sammi_curve(
+    scalar: float = 1.0,
+    offset: float = 0.0,
+    deadband: float = 0.0,
+    max_mag: float = 0.0,
+    absolute_offset: bool = True,
+) -> Callable[[float], float]:
+    return curve(
+        lambda x: scalar * (1.89 * x**3 + 0.61 * x), offset, deadband, max_mag, absolute_offset
     )
 
 

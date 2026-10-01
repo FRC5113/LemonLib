@@ -5,7 +5,6 @@ from .talonfxsim import FalconSim, FalconSimFOC, KrakenSim, KrakenSimFOC
 __all__ = [
     "FalconSim",
     "FalconSimFOC",
-    "KilloughDriveSim",
     "KrakenSim",
     "KrakenSimFOC",
     "LemonCameraSim",

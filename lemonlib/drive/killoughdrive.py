@@ -1,8 +1,7 @@
 import math
 
-from wpilib.interfaces import MotorController
-from wpimath.geometry import Pose2d
-from wpiutil import SendableBuilder
+from wpilib import MotorController
+from wpimath import Pose2d
 
 __all__ = ["KilloughDrive"]
 
@@ -79,9 +78,9 @@ class KilloughDrive:
         x, y = self._apply_field_oriented_control(xSpeed, ySpeed, gyro_angle)
         speeds = self._calculate_wheel_speeds(x, y, omega)
 
-        self.front_left_motor.set(speeds[0])
-        self.front_right_motor.set(speeds[1])
-        self.back_motor.set(speeds[2])
+        self.front_left_motor.set_throttle(speeds[0])
+        self.front_right_motor.set_throttle(speeds[1])
+        self.back_motor.set_throttle(speeds[2])
 
     def drive_polar(self, magnitude: float, angle: float, zRotation: float) -> None:
         """Drive method for Killough platform using polar coordinates.
@@ -96,8 +95,8 @@ class KilloughDrive:
         magnitude = max(min(magnitude, 1), -1) * math.sqrt(2)
 
         self.drive_cartesian(
-            magnitude * math.cos(math.radians(angle)),
             magnitude * math.sin(math.radians(angle)),
+            magnitude * math.cos(math.radians(angle)),
             zRotation,
             0,
         )
@@ -147,21 +146,3 @@ class KilloughDrive:
     def get_position(self):
         """Returns the estimated position of the robot."""
         return Pose2d(self.x, self.y, self.theta)
-
-    def initSendable(self, builder: SendableBuilder) -> None:
-        """Initializes the sendable interface for SmartDashboard integration."""
-        builder.setSmartDashboardType("KilloughDrive")
-        builder.addDoubleProperty("X Position", lambda: self.x, lambda x: None)
-        builder.addDoubleProperty("Y Position", lambda: self.y, lambda x: None)
-        builder.addDoubleProperty(
-            "Heading (deg)", lambda: math.degrees(self.theta), lambda x: None
-        )
-        builder.addDoubleProperty(
-            "Left Motor Speed", self.front_left_motor.get, self.front_left_motor.set
-        )
-        builder.addDoubleProperty(
-            "Right Motor Speed", self.front_right_motor.get, self.front_right_motor.set
-        )
-        builder.addDoubleProperty(
-            "Back Motor Speed", self.back_motor.get, self.back_motor.set
-        )

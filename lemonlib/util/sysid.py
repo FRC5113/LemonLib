@@ -2,7 +2,7 @@ from commands2.sysid import SysIdRoutine
 from wpilib import Timer
 from wpilib.sysid import State, SysIdRoutineLog
 
-from modified_libs.magicbot import will_reset_to
+from magicbot import will_reset_to
 
 
 class MagicSysIdRoutine:
@@ -52,7 +52,11 @@ class MagicSysIdRoutine:
         self.timer = Timer()
         self.timed_out = False
         self.was_enabled = False
-        self.state = State.kNone
+        self.state = State.NONE
+        # magicbot resets these each loop; set them here so the routine
+        # also behaves outside of a MagicRobot
+        self.enabled = False
+        self.output_volts = 0
 
     def setup_sysid(
         self, config: SysIdRoutine.Config, mechanism: SysIdRoutine.Mechanism
@@ -60,27 +64,27 @@ class MagicSysIdRoutine:
         self.log = SysIdRoutineLog(mechanism.name)
         self.config = config
         self.mechanism = mechanism
-        self.record_state = config.recordState or self.log.recordState
+        self.record_state = config.record_state or self.log.record_state
 
     def quasistatic_forward(self):
         self.enabled = True
-        self.state = State.kQuasistaticForward
-        self.outputVolts = self.timer.get() * self.config.rampRate
+        self.state = State.QUASISTATIC_FORWARD
+        self.output_volts = self.timer.get() * self.config.ramp_rate
 
     def quasistatic_reverse(self):
         self.enabled = True
-        self.state = State.kQuasistaticReverse
-        self.outputVolts = -self.timer.get() * self.config.rampRate
+        self.state = State.QUASISTATIC_REVERSE
+        self.output_volts = -self.timer.get() * self.config.ramp_rate
 
     def dynamic_forward(self):
         self.enabled = True
-        self.state = State.kDynamicForward
-        self.outputVolts = self.config.stepVoltage
+        self.state = State.DYNAMIC_FORWARD
+        self.output_volts = self.config.step_voltage
 
     def dynamic_reverse(self):
         self.enabled = True
-        self.state = State.kDynamicReverse
-        self.outputVolts = -self.config.stepVoltage
+        self.state = State.DYNAMIC_REVERSE
+        self.output_volts = -self.config.step_voltage
 
     def on_start(self):
         self.timer.restart()
@@ -90,22 +94,25 @@ class MagicSysIdRoutine:
     def on_end(self):
         self.was_enabled = False
         self.mechanism.drive(0.0)
-        self.record_state(State.kNone)
+        self.record_state(State.NONE)
         self.timer.stop()
 
     def getName(self) -> str:
         return __name__
 
     def execute(self):
-        if self.was_enabled:
-            if self.timed_out:
-                return
-            if not self.enabled:
+        if not self.enabled:
+            # Routine released: stop if running and re-arm after a timeout
+            self.timed_out = False
+            if self.was_enabled:
                 self.on_end()
-                return
-        else:
-            if not self.enabled:
-                return
+            return
+
+        # Stay stopped after a timeout until the routine is released
+        if self.timed_out:
+            return
+
+        if not self.was_enabled:
             self.on_start()
 
         if self.timer.get() > self.config.timeout:
@@ -113,6 +120,6 @@ class MagicSysIdRoutine:
             self.timed_out = True
             return
 
-        self.mechanism.drive(self.outputVolts)
+        self.mechanism.drive(self.output_volts)
         self.mechanism.log(self.log)
         self.record_state(self.state)

@@ -35,47 +35,47 @@ class SmartPreference(Generic[T]):
     """
 
     _changed_flag = False
-    _CACHE_PERIOD = 250_000  # microseconds between NT reads
+    _CACHE_PERIOD = 250_000_000  # nanoseconds between NT reads
 
     def __init__(self, value: T) -> None:
         self._value: Any = value
         self._type: type[Any] = type(value)
-        self._last_nt_read = 0.0
+        self._last_nt_read = float("-inf")
         if self._type not in (int, float, str, bool):
             raise TypeError(
                 f"SmartPreference must be int, float, str, or bool (not {self._type})"
             )
 
     def __set_name__(self, obj, name):
-        try:
-            self._low_bandwidth = obj.low_bandwidth
-        except:
-            self._low_bandwidth = False
+        self._low_bandwidth = getattr(obj, "low_bandwidth", False)
         self._key = name
         if self._low_bandwidth:
             return
         if self._type is int or self._type is float:
-            Preferences.initDouble(self._key, self._value)
+            Preferences.init_double(self._key, self._value)
         elif self._type is str:
-            Preferences.initString(self._key, self._value)
+            Preferences.init_string(self._key, self._value)
         elif self._type is bool:
-            Preferences.initBoolean(self._key, self._value)
+            Preferences.init_boolean(self._key, self._value)
 
     def __get__(self, obj: object, objtype: type | None = None) -> T:
         if self._low_bandwidth:
             return self._value
         # Only re-read from NT periodically to avoid per-cycle overhead
-        now = Timer.getMonotonicTimestamp()
+        now = RobotController.get_monotonic_time()
         if now - self._last_nt_read < SmartPreference._CACHE_PERIOD:
             return self._value
         self._last_nt_read = now
         new = None
-        if self._type is int or self._type is float:
-            new = Preferences.getDouble(self._key, self._value)
+        if self._type is int:
+            # NT stores ints as doubles; keep the declared type
+            new = int(Preferences.get_double(self._key, self._value))
+        elif self._type is float:
+            new = Preferences.get_double(self._key, self._value)
         elif self._type is str:
-            new = Preferences.getString(self._key, self._value)
+            new = Preferences.get_string(self._key, self._value)
         elif self._type is bool:
-            new = Preferences.getBoolean(self._key, self._value)
+            new = Preferences.get_boolean(self._key, self._value)
         if new != self._value:
             SmartPreference._changed_flag = True
             self._value = new
@@ -91,13 +91,13 @@ class SmartPreference(Generic[T]):
         if self._low_bandwidth:
             return
         if self._type is int or self._type is float:
-            Preferences.setDouble(self._key, self._value)
+            Preferences.set_double(self._key, self._value)
         elif self._type is str:
-            Preferences.setString(self._key, self._value)
+            Preferences.set_string(self._key, self._value)
         elif self._type is bool:
-            Preferences.setBoolean(self._key, self._value)
+            Preferences.set_boolean(self._key, self._value)
         self._last_nt_read = (
-            RobotController.getMonotonicTime()
+            RobotController.get_monotonic_time()
         )  # Cache is fresh after set
 
     @staticmethod

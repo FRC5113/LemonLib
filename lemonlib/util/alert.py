@@ -1,10 +1,11 @@
 from enum import Enum
 from logging import Logger
 
-from wpilib import DriverStationBackend, SmartDashboard, Timer
-from wpiutil import Sendable, SendableBuilder
+from wpilib import DriverStationBackend, Timer, RobotController
+import tunables
+import telemetry
 
-from .elastic import Notification, send_notification
+from .elastic import Notification, NotificationLevel, send_notification
 
 
 class AlertType(Enum):
@@ -53,20 +54,12 @@ class Alert:
             active (bool): True to activate, False to deactivate.
         """
         if active and not self.active:
-            self.active_start_time = Timer.getMonotonicTimestamp()
+            self.active_start_time = Timer.get_monotonic_timestamp()
+            self._log(self.text)
 
-            # Log the alert based on its type.
-            match self.type:
-                case AlertType.ERROR.value:
-                    AlertManager.logger.error(self.text)
-                case AlertType.WARNING.value:
-                    AlertManager.logger.warning(self.text)
-                case AlertType.INFO.value:
-                    AlertManager.logger.info(self.text)
-
-            # Send notification to Elastic dashboard.
+            # Send notification to Elastic dashboard (display time is in ms).
             notification = Notification(
-                level=self.type.name,
+                level=NotificationLevel[self.type.name],
                 title="Robot Alert",
                 description=self.text,
                 display_time=int(self.timeout * 1000) if self.timeout > 0 else 3000,
@@ -98,20 +91,27 @@ class Alert:
         if (
             self.active
             and self.text != text
-            and Timer.getMonotonicTimestamp() - self.last_log > 1.0
+            and Timer.get_monotonic_timestamp() - self.last_log > 1.0
         ):
-            self.last_log = Timer.getMonotonicTimestamp()
-            match self.type:
-                case AlertType.ERROR:
-                    AlertManager.logger.error(text)
-                case AlertType.WARNING:
-                    AlertManager.logger.warning(text)
-                case AlertType.INFO:
-                    AlertManager.logger.info(text)
+            self.last_log = Timer.get_monotonic_timestamp()
+            self._log(text)
         self.text = text
 
+    def _log(self, text: str):
+        """Log text to the AlertManager logger at this alert's severity."""
+        logger = AlertManager.logger
+        if logger is None:
+            return
+        match self.type:
+            case AlertType.ERROR:
+                logger.error(text)
+            case AlertType.WARNING:
+                logger.warning(text)
+            case AlertType.INFO:
+                logger.info(text)
 
-class AlertManager(Sendable):
+
+class AlertManager:
     """
     Manages a collection of alerts and integrates with the SmartDashboard.
     """
@@ -127,24 +127,24 @@ class AlertManager(Sendable):
             logger (Logger): Logger instance for logging alert messages.
             enabled (bool): Whether to publish alerts to dashboard.
         """
-        Sendable.__init__(self)
         AlertManager.logger = logger
-        if enabled and not DriverStationBackend.isFMSAttached():
-            SmartDashboard.putData("Alerts", self)
-
-    def initSendable(self, builder: SendableBuilder) -> None:
-        builder.setSmartDashboardType("Alerts")
-        builder.addStringArrayProperty(
-            "errors", lambda: AlertManager.get_strings(AlertType.ERROR), lambda _: None
-        )
-        builder.addStringArrayProperty(
-            "warnings",
-            lambda: AlertManager.get_strings(AlertType.WARNING),
-            lambda _: None,
-        )
-        builder.addStringArrayProperty(
-            "infos", lambda: AlertManager.get_strings(AlertType.INFO), lambda _: None
-        )
+        if enabled and not DriverStationBackend.is_fms_attached():
+            table = tunables.get_table("Alerts")
+            table.publish_string_array(
+                "errors",
+                lambda: AlertManager.get_strings(AlertType.ERROR),
+                lambda _: None,
+            )
+            table.publish_string_array(
+                "warnings",
+                lambda: AlertManager.get_strings(AlertType.WARNING),
+                lambda _: None,
+            )
+            table.publish_string_array(
+                "infos",
+                lambda: AlertManager.get_strings(AlertType.INFO),
+                lambda _: None,
+            )
 
     @staticmethod
     def get_strings(type: AlertType) -> list[str]:
@@ -158,7 +158,7 @@ class AlertManager(Sendable):
             List[str]: List of alert messages.
         """
         alerts = []
-        timestamp = Timer.getMonotonicTimestamp()
+        timestamp = Timer.get_monotonic_timestamp()
         for alert in AlertManager.alerts:
             if not alert.active:
                 continue

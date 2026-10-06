@@ -10,7 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
     "robotpy==2026.2.2",
     "photonlibpy==2026.3.4",
-    "phoenix6==26.3.0",
+    "phoenix6~=26.3.0",
     "robotpy-commands-v2==2026.2.2",
 ]
 authors = [{ name = "Combustible Lemons", email = "robotics@mtps.us" }]

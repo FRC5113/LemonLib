@@ -1,28 +1,24 @@
-import functools
-
 from phoenix6 import signals
 from phoenix6.configs import Slot0Configs
-from wpilib import Preferences
-from wpimath import (
+from wpilib import Preferences, SmartDashboard
+from wpimath.controller import (
     ArmFeedforward,
     ElevatorFeedforward,
-    LinearSystem_2_2_2,
     LTVUnicycleController,
     PIDController,
     ProfiledPIDController,
     ProfiledPIDControllerRadians,
     SimpleMotorFeedforwardMeters,
-    TrapezoidProfile,
-    TrapezoidProfileRadians,
 )
+from wpimath.system import LinearSystem_2_2_2
+from wpimath.trajectory import TrapezoidProfile, TrapezoidProfileRadians
 from wpimath.units import meters, seconds
+from wpiutil import Sendable, SendableBuilder
 
 from .controller import SmartController
 
-import tunables
 
-
-class SmartProfile:
+class SmartProfile(Sendable):
     """Used to store multiple gains and configuration values for several
     different types of controllers. This can optionally interface with
     NetworkTables so that the gains may be dynamically updated without
@@ -46,7 +42,7 @@ class SmartProfile:
         kMinInput: Minimum expected measurement value (used for continuous input)
         kMaxInput: Maximum expected measurement value (used for continuous input)
 
-        Q1, Q2, Q3: State weighting for LTV controllers
+        Q1, Q2, Q3, Q4, Q5: State weighting for LTV controllers
         R1, R2: Input weighting for LTV controllers
 
         :param str profile_key: Prefix for associated NetworkTables keys
@@ -55,37 +51,39 @@ class SmartProfile:
             data from NetworkTables. If true, values from NetworkTables
             are given precedence over values set in code.
         """
+        Sendable.__init__(self)
         self.profile_key = profile_key
         self.tuning_enabled = tuning_enabled
-        self.gains = dict(gains)
+        self.gains = gains
         if tuning_enabled:
-            for gain in self.gains:
-                Preferences.init_double(f"{profile_key}_{gain}", self.gains[gain])
-                self.gains[gain] = Preferences.get_double(
-                    f"{profile_key}_{gain}", self.gains[gain]
+            for gain in gains:
+                Preferences.initDouble(f"{profile_key}_{gain}", gains[gain])
+                self.gains[gain] = Preferences.getDouble(
+                    f"{profile_key}_{gain}", gains[gain]
                 )
-            profile_table = tunables.get_table(f"SmartProfile/{profile_key}")
+            SmartDashboard.putData(f"SmartProfile/{profile_key}", self)
 
-            for gain_key in self.gains:
-                profile_table.publish_double(
-                    gain_key,
-                    (lambda key=gain_key: self.gains[key]),
-                    (lambda value, key=gain_key: self._set_gain(key, value)),
-                )
+    def initSendable(self, builder: SendableBuilder):
+        builder.setSmartDashboardType("SmartController")
+        for gain_key in self.gains:
+            builder.addDoubleProperty(
+                gain_key,
+                (lambda key=gain_key: self.gains[key]),
+                (lambda value, key=gain_key: self._set_gain(key, value)),
+            )
 
     def _set_gain(self, key: str, value: float):
         self.gains[key] = value
         if self.tuning_enabled:
-            Preferences.set_double(f"{self.profile_key}_{key}", value)
+            Preferences.setDouble(f"{self.profile_key}_{key}", value)
 
     def _requires(requirements: set[str]):
         def inner(func):
-            @functools.wraps(func)
             def wrapper(self, key, feedback_enabled=None):
                 missing_reqs = requirements - set(self.gains.keys())
-                assert (
-                    len(missing_reqs) == 0
-                ), f"Requires gains: {', '.join(missing_reqs)}"
+                assert len(missing_reqs) == 0, (
+                    f"Requires gains: {', '.join(missing_reqs)}"
+                )
                 return func(self, key, feedback_enabled)
 
             return wrapper
@@ -101,7 +99,7 @@ class SmartProfile:
         """
         controller = PIDController(self.gains["kP"], self.gains["kI"], self.gains["kD"])
         if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
-            controller.enable_continuous_input(
+            controller.enableContinuousInput(
                 self.gains["kMinInput"], self.gains["kMaxInput"]
             )
         return SmartController(
@@ -117,7 +115,7 @@ class SmartProfile:
         """
         controller = PIDController(self.gains["kP"], self.gains["kI"], self.gains["kD"])
         if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
-            controller.enable_continuous_input(
+            controller.enableContinuousInput(
                 self.gains["kMinInput"], self.gains["kMaxInput"]
             )
         return controller
@@ -221,7 +219,7 @@ class SmartProfile:
             TrapezoidProfile.Constraints(self.gains["kMaxV"], self.gains["kMaxA"]),
         )
         if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
-            controller.enable_continuous_input(
+            controller.enableContinuousInput(
                 self.gains["kMinInput"], self.gains["kMaxInput"]
             )
         return SmartController(
@@ -244,7 +242,7 @@ class SmartProfile:
                 self.gains["kMaxV"], self.gains["kMaxA"]
             ),
         )
-        controller.enable_continuous_input(
+        controller.enableContinuousInput(
             self.gains["kMinInput"], self.gains["kMaxInput"]
         )
         return controller
@@ -252,18 +250,15 @@ class SmartProfile:
     def create_ltv_unicycle_controller(
         self, plant: LinearSystem_2_2_2, trackwidth: meters, dt: seconds = 0.02
     ) -> LTVUnicycleController:
-        """Creates a wpilib LTVUnicycleController.
-        Optional Q1, Q2, Q3 (max desired x, y, heading error) and
-        R1, R2 (max desired linear, angular velocity effort). If any are
-        missing, wpilib's default tolerances are used.
-        `plant` and `trackwidth` are unused and kept for compatibility.
+        """Creates a wpilib LTVUnicyvleController.
+        Requires Qelems tuple(5 elements of SupportsFloat),
+        Relems tuple(2 elements of SupportsFloat)
         """
-        g = self.gains
-        if all(k in g for k in ("Q1", "Q2", "Q3", "R1", "R2")):
-            return LTVUnicycleController(
-                (g["Q1"], g["Q2"], g["Q3"]), (g["R1"], g["R2"]), dt
-            )
-        return LTVUnicycleController(dt)
+        controller = LTVUnicycleController(
+            dt,
+            self.gains["kMaxV"],
+        )
+        return controller
 
     @_requires({"kS", "kV"})
     def create_simple_feedforward(
@@ -292,9 +287,7 @@ class SmartProfile:
         """
         pid = PIDController(self.gains["kP"], self.gains["kI"], self.gains["kD"])
         if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
-            pid.enable_continuous_input(
-                self.gains["kMinInput"], self.gains["kMaxInput"]
-            )
+            pid.enableContinuousInput(self.gains["kMinInput"], self.gains["kMaxInput"])
         feedforward = SimpleMotorFeedforwardMeters(
             self.gains["kS"],
             self.gains["kV"],
@@ -320,9 +313,7 @@ class SmartProfile:
             TrapezoidProfile.Constraints(self.gains["kMaxV"], self.gains["kMaxA"]),
         )
         if "kMinInput" in self.gains.keys() and "kMaxInput" in self.gains.keys():
-            pid.enable_continuous_input(
-                self.gains["kMinInput"], self.gains["kMaxInput"]
-            )
+            pid.enableContinuousInput(self.gains["kMinInput"], self.gains["kMaxInput"])
         feedforward = SimpleMotorFeedforwardMeters(
             self.gains["kS"],
             self.gains["kV"],
@@ -331,7 +322,7 @@ class SmartProfile:
 
         def calculate(y, r):
             pid_output = pid.calculate(y, r)
-            setpoint = pid.get_setpoint()
+            setpoint = pid.getSetpoint()
             # add acceleration eventually
             feedforward_output = feedforward.calculate(setpoint.velocity)
             return pid_output + feedforward_output
@@ -364,7 +355,7 @@ class SmartProfile:
 
         def calculate(y, r):
             pid_output = pid.calculate(y, r)
-            setpoint = pid.get_setpoint()
+            setpoint = pid.getSetpoint()
             # add acceleration eventually
             feedforward_output = feedforward.calculate(setpoint.velocity)
             return pid_output + feedforward_output
@@ -400,7 +391,7 @@ class SmartProfile:
             r,
         ):
             pid_output = pid.calculate(y, r)
-            setpoint = pid.get_setpoint()
+            setpoint = pid.getSetpoint()
             # add acceleration eventually
             feedforward_output = feedforward.calculate(
                 setpoint.position, setpoint.velocity

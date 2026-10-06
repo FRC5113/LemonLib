@@ -1,4 +1,4 @@
-__version__ = "2027.0.0a7"
+__version__ = "2026.2.2"
 
 from .control import LemonInput
 from .vision import LemonCamera

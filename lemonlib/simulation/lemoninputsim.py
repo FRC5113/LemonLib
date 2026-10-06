@@ -1,85 +1,63 @@
-from wpilib import Gamepad, POVDirection
 from wpilib.simulation import GenericHIDSim
 
-from ..control import POV_DIRECTIONS, LemonInput
+from ..control import LemonInput
 
 
 class LemonInputSim(GenericHIDSim):
-    """Simulated controller that drives a `LemonInput` on the same port,
-    using the same button mapping as `LemonInput(port, variant)`.
-    Call `notify_new_data()` after setting values to publish them."""
-
-    def __init__(self, port: int, variant: str = "DriverStation"):
+    def __init__(self, port: int):
         GenericHIDSim.__init__(self, port)
-        lemon_input = LemonInput(port, variant)
-        self._using_driverstation_maps = lemon_input.uses_driverstation_maps
-        self.button_map = lemon_input.button_map
-        self.set_buttons_maximum_index(len(Gamepad.Button.__members__))
-        self.set_axes_maximum_index(len(Gamepad.Axis.__members__))
-        self.set_povs_maximum_index(1)
-
-    def _set_button(self, ds_button: Gamepad.Button, key: str, value: bool) -> None:
-        if self._using_driverstation_maps:
-            self.set_raw_button(ds_button.value, value)
+        if LemonInput(port).getType() == "Xbox":
+            self.button_map = LemonInput.xbox_buttons
         else:
-            self.set_raw_button(self.button_map[key].value, value)
-
-    def _set_axis(self, ds_axis: Gamepad.Axis, key: str, value: float) -> None:
-        if self._using_driverstation_maps:
-            self.set_raw_axis(ds_axis.value, value)
-        else:
-            self.set_raw_axis(self.button_map[key].value, value)
+            self.button_map = LemonInput.ps5_buttons
 
     def setLeftBumper(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.LEFT_BUMPER, "kLeftBumper", value)
+        return self.setRawButton(self.button_map.kLeftBumper.value, value)
 
     def setRightBumper(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.RIGHT_BUMPER, "kRightBumper", value)
+        return self.setRawButton(self.button_map.kRightBumper.value, value)
 
     def setStartButton(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.START, "kStart", value)
+        return self.setRawButton(self.button_map.kStart.value, value)
 
     def setBackButton(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.BACK, "kBack", value)
+        return self.setRawButton(self.button_map.kBack.value, value)
 
     def setAButton(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.FACE_DOWN, "kA", value)
+        return self.setRawButton(self.button_map.kA.value, value)
 
     def setBButton(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.FACE_RIGHT, "kB", value)
+        return self.setRawButton(self.button_map.kB.value, value)
 
     def setXButton(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.FACE_LEFT, "kX", value)
+        return self.setRawButton(self.button_map.kX.value, value)
 
     def setYButton(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.FACE_UP, "kY", value)
+        return self.setRawButton(self.button_map.kY.value, value)
 
     def setLeftStickButton(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.LEFT_STICK, "kLeftStick", value)
+        return self.setRawButton(self.button_map.kLeftStick.value, value)
 
     def setRightStickButton(self, value: bool) -> None:
-        self._set_button(Gamepad.Button.RIGHT_STICK, "kRightStick", value)
+        return self.setRawButton(self.button_map.kRightStick.value, value)
 
     def setRightTriggerAxis(self, value: float) -> None:
-        self._set_axis(Gamepad.Axis.RIGHT_TRIGGER, "kRightTrigger", value)
+        return self.setRawAxis(self.button_map.kRightTrigger.value, value)
 
     def setLeftTriggerAxis(self, value: float) -> None:
-        self._set_axis(Gamepad.Axis.LEFT_TRIGGER, "kLeftTrigger", value)
+        return self.setRawAxis(self.button_map.kLeftTrigger.value, value)
 
     def setLeftX(self, value: float) -> None:
-        self._set_axis(Gamepad.Axis.LEFT_X, "kLeftX", value)
+        return self.setRawAxis(self.button_map.kLeftX.value, value)
 
     def setLeftY(self, value: float) -> None:
-        self._set_axis(Gamepad.Axis.LEFT_Y, "kLeftY", value)
+        return self.setRawAxis(self.button_map.kLeftY.value, value)
 
     def setRightX(self, value: float) -> None:
-        self._set_axis(Gamepad.Axis.RIGHT_X, "kRightX", value)
+        return self.setRawAxis(self.button_map.kRightX.value, value)
 
     def setRightY(self, value: float) -> None:
-        self._set_axis(Gamepad.Axis.RIGHT_Y, "kRightY", value)
+        return self.setRawAxis(self.button_map.kRightY.value, value)
 
-    def setPov(self, value: int | POVDirection) -> None:
-        """Sets the POV from an angle in degrees (-1 for centered) or a POVDirection."""
-        if not isinstance(value, POVDirection):
-            value = POV_DIRECTIONS[value]
-        self.set_pov(value)
+    def setPov(self, value: int) -> None:
+        return self.setPOV(value)

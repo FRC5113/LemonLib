@@ -2,7 +2,7 @@ import json
 from enum import Enum
 
 from ntcore import NetworkTableInstance, PubSubOptions
-from wpilib import get_deploy_directory
+from wpilib import getDeployDirectory
 from wpinet import WebServer
 
 
@@ -65,7 +65,7 @@ def send_notification(notification: Notification):
     global __notification_publisher
 
     if not __notification_topic:
-        __notification_topic = NetworkTableInstance.get_default().get_string_topic(
+        __notification_topic = NetworkTableInstance.getDefault().getStringArrayTopic(
             "/Elastic/RobotNotifications"
         )
     if not __notification_publisher:
@@ -107,7 +107,7 @@ def select_tab(tab_name: str):
     global __selected_tab_publisher
 
     if not __selected_tab_topic:
-        __selected_tab_topic = NetworkTableInstance.get_default().get_string_topic(
+        __selected_tab_topic = NetworkTableInstance.getDefault().getStringArrayTopic(
             "/Elastic/SelectedTab"
         )
     if not __selected_tab_publisher:
@@ -134,5 +134,5 @@ def start_remote_layout():
     Starts the remote layout server for the Elastic dashboard.
     This allows the dashboard to be controlled remotely via a web interface.
     """
-    websever = WebServer.get_instance()
-    websever.start(5800, get_deploy_directory())
+    websever = WebServer.getInstance()
+    websever.start(5800, getDeployDirectory())

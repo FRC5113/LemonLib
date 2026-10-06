@@ -1,7 +1,7 @@
 import math
 
-from wpilib import MotorController
-from wpimath import Pose2d
+from wpilib.interfaces import MotorController
+from wpimath.geometry import Pose2d
 
 __all__ = ["KilloughDrive"]
 

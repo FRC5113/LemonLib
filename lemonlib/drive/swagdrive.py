@@ -1,4 +1,4 @@
-from wpilib import DifferentialDrive
+from wpilib.drive import DifferentialDrive
 
 from lemonlib.smart.preference import SmartPreference
 

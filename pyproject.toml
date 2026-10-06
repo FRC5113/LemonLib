@@ -8,10 +8,10 @@ dynamic = ["version"]
 description = "The goal of LemonLib is to allow all teams of any skill level to have an easier time in FRC"
 requires-python = ">=3.11"
 dependencies = [
-    "robotpy==2027.0.0a7",
-    "photonlibpy @ git+https://github.com/PhotonVision/photonvision.git@main#subdirectory=photon-lib/py",
-    "phoenix6==26.70.0a2",
-    "robotpy-commands-v2==2027.0.0a7",
+    "robotpy==2026.2.2",
+    "photonlibpy==2026.3.4",
+    "phoenix6==26.3.0",
+    "robotpy-commands-v2==2026.2.2",
 ]
 authors = [{ name = "Combustible Lemons", email = "robotics@mtps.us" }]
 license = "MIT"

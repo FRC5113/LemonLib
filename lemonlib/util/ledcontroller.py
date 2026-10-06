@@ -2,8 +2,7 @@ import colorsys
 from typing import SupportsIndex
 
 import wpimath.units
-from wpilib import AddressableLED, LEDPattern, RobotController, Timer
-from wpiutil import Color
+from wpilib import AddressableLED, Color, RobotController, Timer
 
 
 class LEDController:
@@ -18,9 +17,9 @@ class LEDController:
         self.length = length
         # Create a list of LEDData objects, one per LED
         self.buffer = [AddressableLED.LEDData(0, 0, 0) for _ in range(length)]
-        self.led.set_length(length)
-        self.led.set_data(self.buffer)
-        self.led.set_start(0)
+        self.led.setLength(length)
+        self.led.setData(self.buffer)
+        self.led.start()
         self.solid_color = None
         self._move_frame_initialized = False
         self._last_lit_indices: list[int] = []
@@ -31,18 +30,10 @@ class LEDController:
 
     def _clear_all(self):
         for led in self.buffer:
-            led.set_rgb(0, 0, 0)
-
-    def apply_pattern(self, pattern: LEDPattern):
-        """Applies a wpilib.LEDPattern to the LED buffer and updates the strip."""
-        self._reset_move_cache()
-        self.solid_color = None
-        reader = LEDPattern.LEDReader(lambda i: self.buffer[int(i)], self.length)
-        pattern.apply_to(reader, self._write_data)
-        self.led.set_data(self.buffer)
+            led.setRGB(0, 0, 0)
 
     def _write_data(self, index: SupportsIndex, color: Color):
-        self.buffer[int(index)].set_led(color)
+        self.buffer[int(index)].setLED(color)
 
     def set_solid_color(self, color: tuple[int, int, int]):
         """Sets the entire LED strip to a solid color."""
@@ -52,16 +43,16 @@ class LEDController:
         self.solid_color = color
         r, g, b = color
         for led in self.buffer:
-            led.set_rgb(r, g, b)
-        self.led.set_data(self.buffer)
+            led.setRGB(r, g, b)
+        self.led.setData(self.buffer)
 
     def set_pixel(self, index: int, color: tuple[int, int, int]):
         """Sets the color of a single LED pixel."""
         self._reset_move_cache()
         self.solid_color = None
         r, g, b = color
-        self.buffer[index].set_rgb(r, g, b)
-        self.led.set_data(self.buffer)
+        self.buffer[index].setRGB(r, g, b)
+        self.led.setData(self.buffer)
 
     def set_gradient(
         self, start_color: tuple[int, int, int], end_color: tuple[int, int, int]
@@ -77,8 +68,8 @@ class LEDController:
             r = int(start_r + factor * (end_r - start_r))
             g = int(start_g + factor * (end_g - start_g))
             b = int(start_b + factor * (end_b - start_b))
-            buffer[i].set_rgb(r, g, b)
-        self.led.set_data(buffer)
+            buffer[i].setRGB(r, g, b)
+        self.led.setData(buffer)
         self.solid_color = None
 
     def static_rainbow(self, offset: int = 0):
@@ -96,8 +87,8 @@ class LEDController:
             hue = ((i * inv_length) + hue_offset) % 1.0
             # Convert HSV to RGB; using full saturation and 50% brightness
             r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 0.5)
-            buffer[i].set_rgb(int(r * 255), int(g * 255), int(b * 255))
-        self.led.set_data(buffer)
+            buffer[i].setRGB(int(r * 255), int(g * 255), int(b * 255))
+        self.led.setData(buffer)
         self.solid_color = None
 
     def scolling_rainbow(self, speed: float = 1):
@@ -108,17 +99,15 @@ class LEDController:
         self._reset_move_cache()
         length = self.length
         inv_length = 1.0 / length
-        time_offset = (
-            ((RobotController.get_monotonic_time() / 1e9) * speed) / 360.0
-        ) % 1.0
+        time_offset = (((RobotController.getTime() / 1e9) * speed) / 360.0) % 1.0
         buffer = self.buffer
         for i in range(length):
             # Normalize index to [0,1] and add the offset (converted from degrees)
             hue = ((i * inv_length) + time_offset) % 1.0
             # Convert HSV to RGB; using full saturation and 50% brightness
             r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 0.5)
-            buffer[i].set_rgb(int(r * 255), int(g * 255), int(b * 255))
-        self.led.set_data(buffer)
+            buffer[i].setRGB(int(r * 255), int(g * 255), int(b * 255))
+        self.led.setData(buffer)
         self.solid_color = None
 
     def move_across(
@@ -132,7 +121,7 @@ class LEDController:
             colors = [colors]
 
         # Get the current time
-        current_time = Timer.get_monotonic_timestamp()
+        current_time = Timer.getTimestamp()
         length = self.length
         buffer = self.buffer
 
@@ -144,7 +133,7 @@ class LEDController:
             self._move_frame_initialized = True
         else:
             for idx in self._last_lit_indices:
-                buffer[idx].set_rgb(0, 0, 0)
+                buffer[idx].setRGB(0, 0, 0)
 
         num_colors = len(colors)
         segment_len = length // num_colors if num_colors > 0 else length
@@ -154,12 +143,12 @@ class LEDController:
             offset = i * segment_len
             for j in range(size):
                 index = (position - j + offset) % length
-                buffer[index].set_rgb(r, g, b)
+                buffer[index].setRGB(r, g, b)
                 current_lit.append(index)
 
         self._last_lit_indices = current_lit
         self.solid_color = None
-        self.led.set_data(buffer)
+        self.led.setData(buffer)
 
     def move_across_multi(
         self,
@@ -168,7 +157,7 @@ class LEDController:
         hertz: wpimath.units.hertz = 1,
     ):
         """Moves a fixed-size multicolor block across the strip using RobotController.getTime() for timing."""
-        current_time = Timer.get_monotonic_timestamp()
+        current_time = Timer.getTimestamp()
         length = self.length
         buffer = self.buffer
 
@@ -186,7 +175,7 @@ class LEDController:
             self._move_frame_initialized = True
         else:
             for idx in self._last_lit_indices:
-                buffer[idx].set_rgb(0, 0, 0)
+                buffer[idx].setRGB(0, 0, 0)
 
         # Fill the moving block with a color pattern distributed across its size
         current_lit: list[int] = []
@@ -196,11 +185,11 @@ class LEDController:
             r, g, b = colors[color_index]
 
             index = (position + i) % length
-            buffer[index].set_rgb(r, g, b)
+            buffer[index].setRGB(r, g, b)
             current_lit.append(index)
 
         self._last_lit_indices = current_lit
-        self.led.set_data(buffer)
+        self.led.setData(buffer)
         self.solid_color = None
 
     def blink(
@@ -215,7 +204,7 @@ class LEDController:
         :param color2: The second RGB color. Defaults to off (0, 0, 0).
         :param hertz: Blink frequency in Hz (full cycles per second). Default is 2 Hz.
         """
-        current_time = Timer.get_monotonic_timestamp()
+        current_time = Timer.getTimestamp()
         first = (int(current_time * hertz * 2) % 2) == 0
         if first:
             self.set_solid_color(color1)

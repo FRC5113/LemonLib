@@ -178,8 +178,6 @@ networktables.json.bck
 grapplelib/
 
 #debugging stuff
-physics.py
-robot.py
 ./src/ 
 astro.config.mjs
 docs/

@@ -18,9 +18,6 @@ class VisionBase(ABC):
         field: robotpy_fields.Field,
     ) -> None: ...
 
-    @abstractmethod
-    def is_connected(self) -> bool: ...
-
     @overload
     def estimate_multi_tag_pose(self, robot_pose: Pose2d) -> PoseEstimates: ...
 
@@ -36,20 +33,23 @@ class VisionBase(ABC):
     @overload
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
     ) -> PoseEstimates: ...
 
     @overload
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
         robot_pose: Pose2d,
+    ) -> PoseEstimates: ...
+
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        robot_pose: None,
     ) -> PoseEstimates: ...
 
     @abstractmethod
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
         robot_pose: Pose2d | None = None,
     ) -> PoseEstimates: ...
 
@@ -62,6 +62,9 @@ class VisionBase(ABC):
     def has_target(self) -> bool: ...
 
     @abstractmethod
+    def is_connected(self) -> bool: ...
+
+    @abstractmethod
     def set_std_baselines(
         self,
         linear_baseline: units.meters = 0.10,
@@ -69,4 +72,6 @@ class VisionBase(ABC):
     ): ...
 
     @abstractmethod
-    def camera_exists(self, camera_name: str) -> bool: ...
+    def add_heading_data(
+        self, timestamp: units.seconds, heading: Rotation2d
+    ) -> None: ...

@@ -1,4 +1,3 @@
-import math
 from typing import overload
 
 import ntcore
@@ -6,15 +5,13 @@ import robotpy_fields
 from wpimath import (
     Pose2d,
     Rotation2d,
-    Transform2d,
+    TimeInterpolatableRotation2dBuffer,
     Transform3d,
-    Translation2d,
-    Translation3d,
     units,
 )
 
 from ._util import PoseEstimates
-from .limelightutils import FiducialTarget, LimelightResults, decode
+from .limelightutils import LimelightResults, decode
 from .visionbase import VisionBase
 from .visionutil import VisionUtils
 
@@ -54,6 +51,8 @@ class Lemonlight(VisionBase):
         self._last_timestamp = 0.0
 
         self._latest_results: list[LimelightResults] = []
+
+        self._headingBuffer = TimeInterpolatableRotation2dBuffer(1)
 
     @overload
     def estimate_multi_tag_pose(self, robot_pose: Pose2d) -> PoseEstimates: ...
@@ -109,35 +108,68 @@ class Lemonlight(VisionBase):
             poses.append(pose.to_pose2d())
             timestamps.append(ts)
 
+        if not poses:
+            return self.estimate_single_tag_pose()
+
         return PoseEstimates(poses, std_devs, timestamps)
 
     @overload
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
     ) -> PoseEstimates: ...
 
     @overload
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
         robot_pose: Pose2d,
     ) -> PoseEstimates: ...
 
     @overload
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
         robot_pose: None,
     ) -> PoseEstimates: ...
 
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
         robot_pose: Pose2d | None = None,
     ) -> PoseEstimates:
-        # not worth doing atm
-        return PoseEstimates()
+        latest_results = self._latest_results
+
+        poses: list[Pose2d] = []
+        std_devs: list[tuple[float, float, float]] = []
+        timestamps: list[float] = []
+
+        for result in latest_results:
+            if (target := result.get_best_target()) is None:
+                continue
+
+            pose = (
+                target.get_robot_pose_field_space_mt2()
+                or target.get_robot_pose_field_space()
+            )
+            if pose is None:
+                continue
+
+            ts = result.timestamp_micros
+
+            if (cpts := target.get_camera_pose_target_space()) is None:
+                continue
+
+            total_dist = cpts.translation().norm()
+
+            # if VisionUtils.reject_measurement(
+            #     pose, ts, self._last_timestamp, robot_pose
+            # ):
+            #     continue
+
+            self._last_timestamp = ts
+
+            std_devs.append(VisionUtils.compute_multitag_std_devs(total_dist, 1))
+            poses.append(pose.to_pose2d())
+            timestamps.append(ts)
+
+        return PoseEstimates(poses, std_devs, timestamps)
 
     def get_latest_results(self) -> list[LimelightResults]:
         """
@@ -160,104 +192,8 @@ class Lemonlight(VisionBase):
         # not really gonna work but this gonna get replaced when limelight lib comes out sooo
         return self._latest_results[-1].nt_connected
 
-    @staticmethod
-    def camera_exists(camera_name: str) -> bool:
-        instance = ntcore.NetworkTableInstance.get_default()
+    def add_heading_data(
+        self, timestampSeconds: units.seconds, heading: Rotation2d
+    ) -> None:
 
-        return instance.get_table(camera_name).contains_key("hb")
-
-    @staticmethod
-    def _estimate_field_to_robot(
-        camera_height_meters: float,
-        target_height_meters: float,
-        camera_pitch_radians: float,
-        target_pitch_radians: float,
-        target_yaw: Rotation2d,
-        gyro_angle: Rotation2d,
-        field_to_target: Pose2d,
-        camera_to_robot: Transform2d,
-    ) -> Pose2d:
-        # Calculate distance to target using camera and target elevation
-        distance = (target_height_meters - camera_height_meters) / math.tan(
-            camera_pitch_radians + target_pitch_radians
-        )
-
-        # Calculate camera-relative target translation
-        camera_to_target = Translation2d(
-            distance * target_yaw.cos(),
-            distance * target_yaw.sin(),
-        )
-
-        # Calculate camera-to-target transform
-        camera_to_target_transform = Transform2d(
-            camera_to_target,
-            -gyro_angle - (field_to_target.rotation()),
-        )
-
-        # Calculate target-to-camera transform
-        target_to_camera = camera_to_target_transform.inverse()
-
-        # Calculate field-relative camera pose
-        field_to_camera = field_to_target.transform_by(target_to_camera)
-
-        # Calculate field-relative robot pose
-        return field_to_camera.transform_by(camera_to_robot)
-
-    @staticmethod
-    def _estimate_pnp_distance_trig_solve_pose(
-        targets: list[FiducialTarget],
-        gyro_angle: Rotation2d,
-        robot_to_camera: Transform3d,
-        field_layout: robotpy_fields.Field,
-    ) -> Pose2d | None:
-
-        # Select the target with the lowest ambiguity
-        valid_targets = [
-            target
-            for target in targets
-            if target.fiducial_id > 0
-            and target.ambiguity < 1.0
-            and len(target.target_pose_camera_space) >= 6
-        ]
-
-        if not valid_targets:
-            return None
-
-        best_target = min(valid_targets, key=lambda target: target.ambiguity)
-
-        # Get the known AprilTag field pose
-        tag_pose = field_layout.get_tag_pose(best_target.fiducial_id)
-
-        if tag_pose is None:
-            return None
-
-        tag_pose = tag_pose.to_pose2d()
-
-        # Extract camera-to-tag translation
-        target = best_target.target_pose_camera_space
-
-        camera_to_tag = Translation3d(
-            target[0],
-            target[1],
-            target[2],
-        )
-
-        # Rotate camera-to-tag into robot orientation
-        camera_to_tag = camera_to_tag.rotate_by(robot_to_camera.rotation())
-
-        # Convert camera-to-tag into field coordinates
-        camera_to_tag_field = camera_to_tag.to_translation2d().rotate_by(gyro_angle)
-
-        # Calculate field-relative camera position
-        field_to_camera = tag_pose.translation() - camera_to_tag_field
-
-        # Calculate camera-to-robot translation
-        camera_to_robot = (-robot_to_camera.translation().to_translation2d()).rotate_by(
-            gyro_angle
-        )
-
-        # Calculate final robot pose
-        return Pose2d(
-            field_to_camera + camera_to_robot,
-            gyro_angle,
-        )
+        self._headingBuffer.add_sample(timestampSeconds, heading)

@@ -1,12 +1,7 @@
 from typing import Any, overload
 
 import robotpy_fields
-from wpimath import (
-    Pose2d,
-    Rotation2d,
-    Transform3d,
-    units,
-)
+from wpimath import Pose2d, Rotation2d, Transform3d, units
 
 from ._util import PoseEstimates
 
@@ -44,26 +39,22 @@ class NullCamera:
     @overload
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
     ) -> PoseEstimates: ...
 
     @overload
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
         robot_pose: Pose2d,
     ) -> PoseEstimates: ...
 
     @overload
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
         robot_pose: None,
     ) -> PoseEstimates: ...
 
     def estimate_single_tag_pose(
         self,
-        heading: Rotation2d,
         robot_pose: Pose2d | None = None,
     ) -> PoseEstimates:
         return PoseEstimates()
@@ -90,5 +81,5 @@ class NullCamera:
     def estimate_pose_debug(self):
         return None
 
-    def update(self):
-        pass
+    def add_heading_data(self, timestamp: units.seconds, heading: Rotation2d) -> None:
+        return

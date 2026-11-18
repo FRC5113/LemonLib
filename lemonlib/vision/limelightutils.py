@@ -200,6 +200,21 @@ class LimelightResults:
     def get_camera_pose_robot_space(self) -> Pose3d | None:
         return to_Pose3d(self.camera_pose_robot_space)
 
+    def get_best_target(self):
+        best_target = None
+        lowest_ambig = 10.0
+
+        for target in self.fiducial_targets:
+            ambig = target.ambiguity
+            if (not (ambig >= 1)) and ambig < lowest_ambig:
+                lowest_ambig = ambig
+                best_target = target
+
+        return best_target
+
+    def get_timestamp(self):
+        return self.timestamp_millis
+
 
 @staticmethod
 def _transform3d_to_list(transform: Transform3d) -> list[float]:

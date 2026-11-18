@@ -1,5 +1,6 @@
 import functools
 
+import tunables
 from phoenix6 import signals
 from phoenix6.configs import Slot0Configs
 from wpilib import Preferences
@@ -18,8 +19,6 @@ from wpimath import (
 from wpimath.units import meters, seconds
 
 from .controller import SmartController
-
-import tunables
 
 
 class SmartProfile:
@@ -380,7 +379,7 @@ class SmartProfile:
         self, key: str, feedback_enabled: bool = None
     ) -> SmartController:
         """Creates a profiled PID controller combined with an arm feedforward controller.
-        Requires kP, kI, kD, kS, kV, kG, [kA optional]
+        Requires kP, kI, kD, kS, kV, kG, [kA optional], kMaxV, kMaxA
         """
         pid = ProfiledPIDController(
             self.gains["kP"],

@@ -1,12 +1,14 @@
 import math
+from typing import overload
 
 import ntcore
-import robotpy_fields
-from wpimath import ChassisVelocities, Pose2d, Transform3d
-
 import photonlibpy
+import robotpy_fields
+import wpilib
 from photonlibpy.targeting import PhotonPipelineResult
+from wpimath import Pose2d, Rotation2d, Transform3d
 
+from ._util import PoseEstimates
 from .visionbase import VisionBase
 from .visionutil import VisionUtils
 
@@ -23,145 +25,152 @@ class photonname(VisionBase):
         self.pose_estimator = photonlibpy.photon_pose_estimator.PhotonPoseEstimator(
             field, robot_to_camera
         )
-        self.vision_util = VisionUtils()
 
         self.linear_baseline_std = 0.10
         self.angular_baseline_std = math.radians(10.0)
 
-        self._std_devs: tuple[float, float, float] = (0.0, 0.0, 0.0)
+        self._last_timestamp = 0.0
 
-        self._timestamp = -1e-6
+        self._latest_results: list[PhotonPipelineResult] = []
 
-    def estimate_pose_debug(self):
-        latest_results = self.get_latest_results()
-        if len(latest_results) == 0:
-            return None
+    @overload
+    def estimate_multi_tag_pose(self, robot_pose: Pose2d) -> PoseEstimates: ...
 
-        test = self.pose_estimator.estimateLowestAmbiguityPose(latest_results[-1])
-        if test is not None:
-            return test.estimatedPose.to_pose2d()
-        else:
-            return None
+    @overload
+    def estimate_multi_tag_pose(self, robot_pose: None) -> PoseEstimates: ...
+
+    @overload
+    def estimate_multi_tag_pose(self) -> PoseEstimates: ...
 
     def estimate_multi_tag_pose(
         self,
         robot_pose: Pose2d | None = None,
-        drivetrain_velocities: ChassisVelocities | None = None,
-    ) -> Pose2d | None:
-        latest_results = self.get_latest_results()
+    ) -> PoseEstimates:
+        latest_results = self._latest_results
 
-        valid_estimates: list[tuple[Pose2d, float, tuple[float, float, float]]] = []
+        poses: list[Pose2d] = []
+        std_devs: list[tuple[float, float, float]] = []
+        timestamps: list[float] = []
 
-        for res in latest_results:
-            targets = res.getTargets()
-            if not targets:
-                continue
+        for result in latest_results:
+            targets = result.getTargets()
 
-            pose_estimate = self.pose_estimator.estimateCoprocMultiTagPose(res)
+            pose_estimate = self.pose_estimator.estimateCoprocMultiTagPose(result)
 
             if pose_estimate is None:
-                continue
+                pose_estimate = self.pose_estimator.estimateLowestAmbiguityPose(result)
+
+                if pose_estimate is None:
+                    continue
 
             ts = pose_estimate.timestampSeconds
-            pose3d = pose_estimate.estimatedPose
-            twod_pose = pose3d.to_pose2d()
+            pose = pose_estimate.estimatedPose
 
             # Compute std devs
             tag_count = len(targets)
+            if tag_count <= 0:
+                continue
+
             total_dist = sum(
                 t.getBestCameraToTarget().translation().norm() for t in targets
             )
             avg_dist = total_dist / tag_count
 
-            if self.vision_util.reject_measurement(pose3d, twod_pose, ts, robot_pose):
-                continue
+            # if VisionUtils.reject_measurement(
+            #     pose, ts, self._last_timestamp, robot_pose
+            # ):
+            #     continue
 
-            std_devs = self.vision_util.compute_std_devs(avg_dist, tag_count)
+            self._last_timestamp = ts
 
-            valid_estimates.append((twod_pose, ts, std_devs))
+            std_devs.append(VisionUtils.compute_multitag_std_devs(avg_dist, tag_count))
+            poses.append(pose.to_pose2d())
+            timestamps.append(ts)
 
-        if valid_estimates:
-            if len(valid_estimates) == 1:
-                pose, self._timestamp, self._std_devs = valid_estimates[0]
-                return pose
-            else:
-                fused = self.vision_util.fuse_estimates(
-                    valid_estimates, drivetrain_velocities
-                )
-                if fused is not None:
-                    pose, self._timestamp, self._std_devs = fused
-                    return pose
+        return PoseEstimates(poses, std_devs, timestamps)
 
-        return None
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        heading: Rotation2d,
+    ) -> PoseEstimates: ...
+
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        heading: Rotation2d,
+        robot_pose: Pose2d,
+    ) -> PoseEstimates: ...
+
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        heading: Rotation2d,
+        robot_pose: None,
+    ) -> PoseEstimates: ...
 
     def estimate_single_tag_pose(
         self,
+        heading: Rotation2d,
         robot_pose: Pose2d | None = None,
-        drivetrain_velocities: ChassisVelocities | None = None,
-    ) -> Pose2d | None:
-        latest_results = self.get_latest_results()
+    ) -> PoseEstimates:
+        self.pose_estimator.addHeadingData(wpilib.RobotController().get_time(), heading)
 
-        valid_estimates: list[tuple[Pose2d, float, tuple[float, float, float]]] = []
+        latest_results = self._latest_results
 
-        for res in latest_results:
-            targets = res.getTargets()
-            if not targets:
-                continue
+        poses: list[Pose2d] = []
+        std_devs: list[tuple[float, float, float]] = []
+        timestamps: list[float] = []
 
-            pose_estimate = self.pose_estimator.estimateLowestAmbiguityPose(res)
+        for result in latest_results:
+            targets = result.getTargets()
+
+            pose_estimate = self.pose_estimator.estimatePnpDistanceTrigSolvePose(result)
 
             if pose_estimate is None:
                 continue
 
             ts = pose_estimate.timestampSeconds
-            pose3d = pose_estimate.estimatedPose
-            twod_pose = pose3d.to_pose2d()
+            pose = pose_estimate.estimatedPose
 
             # Compute std devs
             tag_count = len(targets)
+            if tag_count <= 0:
+                continue
+
             total_dist = sum(
                 t.getBestCameraToTarget().translation().norm() for t in targets
             )
             avg_dist = total_dist / tag_count
 
-            if self.vision_util.reject_measurement(pose3d, twod_pose, ts, robot_pose):
-                continue
+            # if VisionUtils.reject_measurement(
+            #     pose, ts, self._last_timestamp, robot_pose
+            # ):
+            #     continue
 
-            std_devs = self.vision_util.compute_std_devs(avg_dist, tag_count)
+            self._last_timestamp = ts
 
-            valid_estimates.append((twod_pose, ts, std_devs))
+            std_devs.append(VisionUtils.compute_multitag_std_devs(avg_dist, tag_count))
+            poses.append(pose.to_pose2d())
+            timestamps.append(ts)
 
-        if valid_estimates:
-            if len(valid_estimates) == 1:
-                pose, self._timestamp, self._std_devs = valid_estimates[0]
-                return pose
-            else:
-                fused = self.vision_util.fuse_estimates(
-                    valid_estimates, drivetrain_velocities
-                )
-                if fused is not None:
-                    pose, self._timestamp, self._std_devs = fused
-                    return pose
-
-        return None
+        return PoseEstimates(poses, std_devs, timestamps)
 
     def get_latest_results(self) -> list[PhotonPipelineResult]:
-        return self.photon_camera.getAllUnreadResults()
+        """
+        must call every loop
+        """
+        self._latest_results = self.photon_camera.getAllUnreadResults()
+        return self._latest_results
 
     def has_target(self) -> bool:
-        latest_results = self.get_latest_results()
+        latest_results = self._latest_results
 
         if len(latest_results) > 0:
             for res in latest_results:
                 if res.hasTargets():
                     return True
         return False
-
-    def get_std_devs(self) -> tuple[float, float, float]:
-        return self._std_devs
-
-    def get_timestamp(self) -> float:
-        return self._timestamp
 
     def set_std_baselines(
         self, linear_baseline: float = 0.1, angular_baseline: float = 0.174
@@ -175,6 +184,31 @@ class photonname(VisionBase):
     @staticmethod
     def camera_exists(camera_name: str) -> bool:
         instance = ntcore.NetworkTableInstance.get_default()
-        instance.flush()
         table = instance.get_table("photonvision")
-        return table.contains_sub_table(camera_name)
+        sub = table.get_sub_table(camera_name)
+        heartbeatEntry = sub.get_integer_topic("heartbeat").subscribe(-1)
+
+        # Heartbeat entry is assumed to always be present. If it's not present, we
+        # assume that a camera with that name was never connected in the first place.
+        if not heartbeatEntry.exists():
+            cameraNames = table.get_sub_tables()
+            # Look for only cameras with rawBytes entry that exists
+            cameraNames = list(
+                filter(
+                    lambda it: sub.get_sub_table(it).get_entry("rawBytes").exists(),
+                    cameraNames,
+                )
+            )
+            if len(cameraNames) == 0:
+                wpilib.report_error(
+                    "Could not find any PhotonVision coprocessors on NetworkTables. Double check that PhotonVision is running, and that your camera is connected!",
+                    False,
+                )
+            else:
+                wpilib.report_error(
+                    f"PhotonVision coprocessor at path {sub.get_path()} not found in Network Tables. Double check that your camera names match! Only the following camera names were found: {''.join(cameraNames)}",
+                    True,
+                )
+            return False
+
+        return True

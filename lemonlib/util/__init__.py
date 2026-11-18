@@ -122,7 +122,11 @@ def sammi_curve(
     absolute_offset: bool = True,
 ) -> Callable[[float], float]:
     return curve(
-        lambda x: scalar * (1.89 * x**3 + 0.61 * x), offset, deadband, max_mag, absolute_offset
+        lambda x: scalar * (1.89 * x**3 + 0.61 * x),
+        offset,
+        deadband,
+        max_mag,
+        absolute_offset,
     )
 
 

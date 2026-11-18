@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
+from typing import overload
 
 import robotpy_fields
-from wpimath import ChassisVelocities, Pose2d, Transform3d, units
-
 from photonlibpy.targeting import PhotonPipelineResult
+from wpimath import Pose2d, Rotation2d, Transform3d, units
 
-from . import LimelightResults
+from ._util import PoseEstimates
+from .limelightutils import LimelightResults
 
 
 class VisionBase(ABC):
@@ -20,31 +21,45 @@ class VisionBase(ABC):
     @abstractmethod
     def is_connected(self) -> bool: ...
 
-    @abstractmethod
-    def get_std_devs(self) -> tuple[float, float, float]: ...
+    @overload
+    def estimate_multi_tag_pose(self, robot_pose: Pose2d) -> PoseEstimates: ...
+
+    @overload
+    def estimate_multi_tag_pose(self) -> PoseEstimates: ...
 
     @abstractmethod
     def estimate_multi_tag_pose(
         self,
         robot_pose: Pose2d | None = None,
-        drivetrain_velocities: ChassisVelocities | None = None,
-    ) -> Pose2d | None: ...
+    ) -> PoseEstimates: ...
+
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        heading: Rotation2d,
+    ) -> PoseEstimates: ...
+
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        heading: Rotation2d,
+        robot_pose: Pose2d,
+    ) -> PoseEstimates: ...
 
     @abstractmethod
     def estimate_single_tag_pose(
         self,
+        heading: Rotation2d,
         robot_pose: Pose2d | None = None,
-        drivetrain_velocities: ChassisVelocities | None = None,
-    ) -> Pose2d | None: ...
+    ) -> PoseEstimates: ...
 
     @abstractmethod
-    def get_latest_results(self) -> list[PhotonPipelineResult] | LimelightResults: ...
+    def get_latest_results(
+        self,
+    ) -> list[PhotonPipelineResult] | list[LimelightResults]: ...
 
     @abstractmethod
     def has_target(self) -> bool: ...
-
-    @abstractmethod
-    def get_timestamp(self) -> float: ...
 
     @abstractmethod
     def set_std_baselines(

@@ -1,10 +1,15 @@
+from typing import overload
+
 import robotpy_fields
 import wpilib
-from wpimath import ChassisVelocities, Pose2d, Transform3d, units
-
 from photonlibpy.targeting import PhotonPipelineResult
+from wpimath import Pose2d, Rotation2d, Transform3d, units
 
-from . import LimelightResults, NullCamera, limelight, photon
+from ._nullcam import NullCamera
+from ._util import PoseEstimates
+from .limelight import Lemonlight
+from .limelightutils import LimelightResults
+from .photon import photonname
 from .visionbase import VisionBase
 
 _lastVersionTimeCheck = 0.0
@@ -23,12 +28,12 @@ class LemonCamera(VisionBase):
         self.field = field
         self._report_camera_not_found = f"Camera {camera_name} not found, make sure it and its coprocessor are connected"
 
-        if photon.photonname.camera_exists(self.camera_name):
-            self._camera = photon.photonname(
+        if photonname.camera_exists(self.camera_name):
+            self._camera = photonname(
                 self.camera_name, self.robot_to_camera, self.field
             )
-        elif limelight.Lemonlight.camera_exists(self.camera_name):
-            self._camera = limelight.Lemonlight(
+        elif Lemonlight.camera_exists(self.camera_name):
+            self._camera = Lemonlight(
                 self.camera_name, self.robot_to_camera, self.field
             )
         else:
@@ -42,34 +47,53 @@ class LemonCamera(VisionBase):
         self._check_camera_exist()
         return self._camera.is_connected()
 
-    def get_std_devs(self) -> tuple[float, float, float]:
+    @overload
+    def estimate_multi_tag_pose(self, robot_pose: Pose2d) -> PoseEstimates: ...
 
-        self._check_camera_exist()
-        return self._camera.get_std_devs()
+    @overload
+    def estimate_multi_tag_pose(self, robot_pose: None) -> PoseEstimates: ...
 
-    def estimate_pose_debug(self):
-        self._check_camera_exist()
-        return self._camera.estimate_pose_debug()
+    @overload
+    def estimate_multi_tag_pose(self) -> PoseEstimates: ...
 
     def estimate_multi_tag_pose(
         self,
         robot_pose: Pose2d | None = None,
-        drivetrain_velocities: ChassisVelocities | None = None,
-    ) -> Pose2d | None:
+    ) -> PoseEstimates:
 
         self._check_camera_exist()
-        return self._camera.estimate_multi_tag_pose(robot_pose, drivetrain_velocities)
+        return self._camera.estimate_multi_tag_pose(robot_pose)
+
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        heading: Rotation2d,
+    ) -> PoseEstimates: ...
+
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        heading: Rotation2d,
+        robot_pose: Pose2d,
+    ) -> PoseEstimates: ...
+
+    @overload
+    def estimate_single_tag_pose(
+        self,
+        heading: Rotation2d,
+        robot_pose: None,
+    ) -> PoseEstimates: ...
 
     def estimate_single_tag_pose(
         self,
+        heading: Rotation2d,
         robot_pose: Pose2d | None = None,
-        drivetrain_velocities: ChassisVelocities | None = None,
-    ) -> Pose2d | None:
+    ) -> PoseEstimates:
 
         self._check_camera_exist()
-        return self._camera.estimate_single_tag_pose(robot_pose, drivetrain_velocities)
+        return self._camera.estimate_single_tag_pose(heading, robot_pose)
 
-    def get_latest_results(self) -> list[PhotonPipelineResult] | LimelightResults:
+    def get_latest_results(self) -> list[PhotonPipelineResult] | list[LimelightResults]:
 
         self._check_camera_exist()
         return self._camera.get_latest_results()
@@ -78,11 +102,6 @@ class LemonCamera(VisionBase):
 
         self._check_camera_exist()
         return self._camera.has_target()
-
-    def get_timestamp(self) -> float:
-
-        self._check_camera_exist()
-        return self._camera.get_timestamp()
 
     def set_std_baselines(
         self,
@@ -107,14 +126,12 @@ class LemonCamera(VisionBase):
 
         _lastVersionTimeCheck = wpilib.Timer.get_monotonic_timestamp()
 
-        if photon.photonname(
-            self.camera_name, self.robot_to_camera, self.field
-        ).is_connected():
-            self._camera = photon.photonname(
+        if photonname.camera_exists(self.camera_name):
+            self._camera = photonname(
                 self.camera_name, self.robot_to_camera, self.field
             )
-        elif limelight.Lemonlight.camera_exists(self.camera_name):
-            self._camera = limelight.Lemonlight(
+        elif Lemonlight.camera_exists(self.camera_name):
+            self._camera = Lemonlight(
                 self.camera_name, self.robot_to_camera, self.field
             )
         else:

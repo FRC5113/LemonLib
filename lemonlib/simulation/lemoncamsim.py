@@ -2,7 +2,7 @@ from photonlibpy.simulation import PhotonCameraSim, SimCameraProperties, VisionS
 from robotpy_fields import Field
 from wpimath import Pose2d, Rotation2d
 
-from ..vision import LemonCamera
+from ..vision.visionutil import LemonCamera
 
 
 class LemonVisionSim:
